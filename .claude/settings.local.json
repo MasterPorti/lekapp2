@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(npm run *)",
+      "PowerShell(taskkill *)",
+      "PowerShell(npm install *)",
+      "Bash(npx tsc *)",
+      "Bash(npm run *)",
+      "PowerShell(npx tsc --noEmit 2>&1)",
+      "Bash(Get-ChildItem -Path \"D:\\\\dev\\\\lekapp\" -Force)",
+      "Bash(Select-Object Name, Mode)"
+    ]
+  }
+}
