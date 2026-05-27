@@ -168,7 +168,7 @@ export const BlockSelectorModal = ({
             onClick={() => onBlockClick("control", "Detener todos", "#EAB308", "#CA8A04")}
             width={230}
             viewBox="0 0 153 24"
-            path="M19 0.5H2C1.17157 0.5 0.5 1.17157 0.5 2V17C0.5 17.8284 1.17157 18.5 2 18.5H19C19.2761 18.5 19.5 18.7239 19.5 19V22C19.5 22.8284 20.1716 23.5 21 23.5H36C36.8284 23.5 37.5 22.8284 37.5 22V19C37.5 18.7239 37.7239 18.5 38 18.5H151C151.828 18.5 152.5 17.8284 152.5 17V2C152.5 1.17157 151.828 0.5 151 0.5H38C37.7239 0.5 37.5 0.72386 37.5 1V4C37.5 4.82843 36.8284 5.5 36 5.5H21C20.1716 5.5 19.5 4.82843 19.5 4V1C19.5 0.72386 19.2761 0.5 19 0.5Z"
+            path="M19 0.5H2C1.17157 0.5 0.5 1.17157 0.5 2V17C0.5 17.8284 1.17157 18.5 2 18.5H151C151.828 18.5 152.5 17.8284 152.5 17V2C152.5 1.17157 151.828 0.5 151 0.5H38C37.7239 0.5 37.5 0.72386 37.5 1V4C37.5 4.82843 36.8284 5.5 36 5.5H21C20.1716 5.5 19.5 4.82843 19.5 4V1C19.5 0.72386 19.2761 0.5 19 0.5Z"
             fill="#EAB308"
             stroke="#CA8A04"
           >
@@ -185,19 +185,6 @@ export const BlockSelectorModal = ({
 
       {activeCategory === "movimiento" && (
         <div className="mt-8 flex flex-col items-start gap-2 pl-8">
-          <BlockOption
-            onClick={() => onBlockClick("movimiento", "Mover adelante 100%", "#3B82F6", "#2563EB", "100")}
-            width={260}
-            viewBox="0 0 173 24"
-            path="M19 0.5H2C1.17157 0.5 0.5 1.17157 0.5 2V17C0.5 17.8284 1.17157 18.5 2 18.5H19C19.2761 18.5 19.5 18.7239 19.5 19V22C19.5 22.8284 20.1716 23.5 21 23.5H36C36.8284 23.5 37.5 22.8284 37.5 22V19C37.5 18.7239 37.7239 18.5 38 18.5H171C171.828 18.5 172.5 17.8284 172.5 17V2C172.5 1.17157 171.828 0.5 171 0.5H38C37.7239 0.5 37.5 0.72386 37.5 1V4C37.5 4.82843 36.8284 5.5 36 5.5H21C20.1716 5.5 19.5 4.82843 19.5 4V1C19.5 0.72386 19.2761 0.5 19 0.5Z"
-            fill="#3B82F6"
-            stroke="#2563EB"
-          >
-            <div className="absolute top-[45%] left-[68px] -translate-y-1/2 font-mono text-white text-sm whitespace-nowrap select-none flex items-center gap-1">
-              Mover adelante{" "}
-              <span className="bg-blue-700 px-1.5 py-0.5 rounded">100</span>%
-            </div>
-          </BlockOption>
           <BlockOption
             onClick={() => onBlockClick("movimiento", "Motor X Adelante 100%", "#3B82F6", "#2563EB", "X:100")}
             width={280}
@@ -256,6 +243,34 @@ export const BlockSelectorModal = ({
               <span className="bg-blue-700 px-1.5 py-0.5 rounded">100</span>% atras
             </div>
           </BlockOption>
+          <BlockOption
+            onClick={() => onBlockClick("movimiento", "Detener motor X", "#3B82F6", "#2563EB", "X")}
+            width={240}
+            viewBox="0 0 160 24"
+            path="M19 0.5H2C1.17157 0.5 0.5 1.17157 0.5 2V17C0.5 17.8284 1.17157 18.5 2 18.5H19C19.2761 18.5 19.5 18.7239 19.5 19V22C19.5 22.8284 20.1716 23.5 21 23.5H36C36.8284 23.5 37.5 22.8284 37.5 22V19C37.5 18.7239 37.7239 18.5 38 18.5H158C158.828 18.5 159.5 17.8284 159.5 17V2C159.5 1.17157 158.828 0.5 158 0.5H38C37.7239 0.5 37.5 0.72386 37.5 1V4C37.5 4.82843 36.8284 5.5 36 5.5H21C20.1716 5.5 19.5 4.82843 19.5 4V1C19.5 0.72386 19.2761 0.5 19 0.5Z"
+            fill="#3B82F6"
+            stroke="#2563EB"
+          >
+            <div className="absolute top-[45%] left-[68px] -translate-y-1/2 font-mono text-white text-sm whitespace-nowrap select-none flex items-center gap-1">
+              Detener motor{" "}
+              <span className="bg-blue-700 px-1.5 py-0.5 rounded inline-flex items-center justify-center">
+                <ParamIcon param="X" size={14} />
+              </span>
+            </div>
+          </BlockOption>
+          <BlockOption
+            onClick={() => onBlockClick("movimiento", "Detener todos los motores", "#3B82F6", "#2563EB")}
+            width={340}
+            viewBox="0 0 227 24"
+            path="M19 0.5H2C1.17157 0.5 0.5 1.17157 0.5 2V17C0.5 17.8284 1.17157 18.5 2 18.5H19C19.2761 18.5 19.5 18.7239 19.5 19V22C19.5 22.8284 20.1716 23.5 21 23.5H36C36.8284 23.5 37.5 22.8284 37.5 22V19C37.5 18.7239 37.7239 18.5 38 18.5H225C225.828 18.5 226.5 17.8284 226.5 17V2C226.5 1.17157 225.828 0.5 225 0.5H38C37.7239 0.5 37.5 0.72386 37.5 1V4C37.5 4.82843 36.8284 5.5 36 5.5H21C20.1716 5.5 19.5 4.82843 19.5 4V1C19.5 0.72386 19.2761 0.5 19 0.5Z"
+            fill="#3B82F6"
+            stroke="#2563EB"
+          >
+            <div className="absolute top-[45%] left-[68px] -translate-y-1/2 font-mono text-white text-sm whitespace-nowrap select-none flex items-center gap-2">
+              <span className="w-4 h-4 bg-red-600 rounded-full border border-red-800"></span>
+              Detener todos los motores
+            </div>
+          </BlockOption>
         </div>
       )}
     </div>
@@ -283,7 +298,8 @@ const BlockOption = ({
 }: BlockOptionProps) => (
   <div
     onClick={onClick}
-    className="cursor-pointer hover:opacity-80 transition-opacity relative"
+    className="cursor-pointer block-hover-glow hover:scale-[1.02] active:scale-[0.98] relative"
+    style={{ "--glow-color": fill } as React.CSSProperties}
   >
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -305,7 +321,8 @@ interface CShapedBlockOptionProps {
 const CShapedBlockOption = ({ onClick }: CShapedBlockOptionProps) => (
   <div
     onClick={onClick}
-    className="cursor-pointer hover:opacity-80 transition-opacity relative"
+    className="cursor-pointer block-hover-glow hover:scale-[1.02] active:scale-[0.98] relative"
+    style={{ "--glow-color": "#EAB308" } as React.CSSProperties}
   >
     <CShapedBlockSvg color="#EAB308" stroke="#CA8A04" childrenCount={0} />
     <div className="absolute top-[27px] left-[68px] -translate-y-1/2 font-mono text-black text-sm whitespace-nowrap select-none flex items-center gap-1">

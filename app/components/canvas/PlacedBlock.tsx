@@ -94,66 +94,32 @@ export const PlacedBlock = ({
     }
   };
 
-  const renderChildBlocks = () => {
-    if (block.type !== "control-loop" || !block.children?.length) return null;
-
-    return block.children.map((child, childIndex) => {
-      const childOffsetX = LOOP_INNER_X_OFFSET * LOOP_SCALE - 1;
-      const childOffsetY =
-        LOOP_HEADER_HEIGHT * LOOP_SCALE -
-        15 +
-        childIndex * BLOCK_VERTICAL_SPACING;
-
-      return (
-        <div
-          key={childIndex}
-          className="absolute"
-          style={{
-            left: `${childOffsetX}px`,
-            top: `${childOffsetY}px`,
-          }}
-        >
-          <div className="relative">
-            <BlockSvg
-              type={child.type}
-              text={child.text}
-              color={child.color}
-              stroke={child.stroke}
-            />
-            <BlockContent
-              type={child.type}
-              text={child.text}
-              param={child.param}
-            />
-          </div>
-        </div>
-      );
-    });
-  };
-
   return (
     <div
       className={`absolute ${
-        isBeingEdited ? "animate-pulse opacity-70 cursor-move" : ""
+        isBeingEdited ? "selected-block-glow opacity-95 cursor-move" : ""
       }`}
       style={{
         left: `calc(50% + ${block.x}px - 42px)`,
         top: `calc(50% + ${block.y}px)`,
         transform: "translateY(-50%)",
-      }}
+        "--glow-color": block.color,
+      } as React.CSSProperties}
       onMouseDown={handleMouseDown}
       onMouseUp={onLongPressEnd}
       onMouseLeave={onLongPressEnd}
       onTouchStart={handleTouchStart}
       onTouchEnd={onLongPressEnd}
     >
-      <div className="relative">
+      <div className={`relative ${
+        !isBeingEdited ? "cursor-pointer active:scale-[0.99]" : ""
+      }`}>
         <BlockSvg
           type={block.type}
           text={block.text}
           color={block.color}
           stroke={block.stroke}
-          childrenCount={block.children?.length || 0}
+          childrenCount={block.childrenCount || 0}
         />
         <BlockContent
           type={block.type}
@@ -163,7 +129,6 @@ export const PlacedBlock = ({
             onParamClick(index, paramType, color)
           }
         />
-        {renderChildBlocks()}
       </div>
     </div>
   );

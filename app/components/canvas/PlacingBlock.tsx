@@ -70,12 +70,13 @@ export const PlacingBlockComponent = ({
 
   return (
     <div
-      className="absolute animate-pulse opacity-70 cursor-move"
+      className="absolute selected-block-glow opacity-95 cursor-move"
       style={{
         left: `calc(50% + ${position.x}px - 42px)`,
         top: `calc(50% + ${position.y}px)`,
         transform: "translateY(-50%)",
-      }}
+        "--glow-color": block.color,
+      } as React.CSSProperties}
       onMouseDown={handleMouseDown}
       onTouchStart={handleTouchStart}
     >
@@ -85,7 +86,7 @@ export const PlacingBlockComponent = ({
           text={block.text}
           color={block.color}
           stroke={block.stroke}
-          childrenCount={block.children?.length || 0}
+          childrenCount={block.childrenCount || block.children?.length || 0}
         />
         <BlockContent
           type={block.type}

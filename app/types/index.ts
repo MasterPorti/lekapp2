@@ -1,4 +1,5 @@
 export interface Block {
+  id: string;
   x: number;
   y: number;
   type: string;
@@ -7,15 +8,29 @@ export interface Block {
   stroke: string;
   param?: string;
   children?: Block[];
+  
+  // Connection references
+  parentId?: string;
+  nextBlockId?: string;
+  childBlockId?: string;
+  childrenCount?: number;
+  isChild?: boolean;
 }
 
 export interface PlacingBlock {
+  id?: string;
   type: string;
   text: string;
   color: string;
   stroke: string;
   param?: string;
   children?: Block[];
+  
+  parentId?: string;
+  nextBlockId?: string;
+  childBlockId?: string;
+  childrenCount?: number;
+  isChild?: boolean;
 }
 
 export interface ParamSelectorState {

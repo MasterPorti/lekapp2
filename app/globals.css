@@ -10,16 +10,21 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-space: var(--font-space);
+  --font-display: var(--font-display);
 }
 
 html, body {
   background-color: #000000;
-  background-image: radial-gradient(#333333 1px, transparent 1px);
+  background-image: radial-gradient(rgba(255, 255, 255, 0.3) 1px, transparent 1px);
   background-size: 20px 20px;
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
   margin: 0;
   padding: 0;
+}
+
+.canvas-page-lock {
   height: 100vh;
   height: 100dvh;
   width: 100vw;
@@ -30,6 +35,22 @@ html, body {
   touch-action: none;
   overscroll-behavior: none;
   -webkit-overflow-scrolling: none;
+}
+
+/* Global text selection and touch callout prevention */
+*:not(input):not(textarea):not([contenteditable="true"]):not(.select-text):not(.select-text *) {
+  -webkit-user-select: none !important;
+  -webkit-touch-callout: none !important;
+  -moz-user-select: none !important;
+  -ms-user-select: none !important;
+  user-select: none !important;
+}
+
+input, textarea, [contenteditable="true"], .select-text, .select-text * {
+  -webkit-user-select: text !important;
+  -moz-user-select: text !important;
+  -ms-user-select: text !important;
+  user-select: text !important;
 }
 
 #__next {
@@ -79,7 +100,100 @@ html, body {
   white-space: nowrap;
 }
 
-button {
+button, [role="button"], svg, .select-none {
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
 }
+
+@keyframes select-pulse {
+  0% {
+    filter: drop-shadow(0 0 3px var(--glow-color, #ffffff));
+  }
+  50% {
+    filter: drop-shadow(0 0 11px var(--glow-color, #ffffff)) drop-shadow(0 0 19px var(--glow-color, #ffffff));
+  }
+  100% {
+    filter: drop-shadow(0 0 3px var(--glow-color, #ffffff));
+  }
+}
+
+.selected-block-glow {
+  animation: select-pulse 1.8s infinite ease-in-out;
+  z-index: 50 !important;
+}
+
+.block-hover-glow {
+  transition: filter 0.2s ease-in-out, transform 0.2s ease-in-out;
+}
+
+.block-hover-glow:hover {
+  filter: drop-shadow(0 0 6px var(--glow-color, #ffffff)) drop-shadow(0 0 12px var(--glow-color, #ffffff));
+}
+
+@keyframes shifting-shadow {
+  0% {
+    box-shadow: -8px 4px 18px rgba(220, 42, 54, 0.18);
+  }
+  25% {
+    box-shadow: 0px 6px 22px rgba(220, 42, 54, 0.25);
+  }
+  50% {
+    box-shadow: 8px 4px 18px rgba(220, 42, 54, 0.18);
+  }
+  75% {
+    box-shadow: 0px 2px 14px rgba(220, 42, 54, 0.12);
+  }
+  100% {
+    box-shadow: -8px 4px 18px rgba(220, 42, 54, 0.18);
+  }
+}
+
+.animate-moving-shadow {
+  animation: shifting-shadow 5s infinite ease-in-out;
+}
+
+@keyframes multicolor-glow {
+  0% {
+    box-shadow: 4px 4px 0px rgba(0,0,0,1), -8px -8px 25px rgba(220, 42, 54, 0.4), 8px 8px 25px rgba(37, 99, 235, 0.4);
+  }
+  25% {
+    box-shadow: 4px 4px 0px rgba(0,0,0,1), -8px 8px 25px rgba(22, 163, 74, 0.4), 8px -8px 25px rgba(217, 119, 6, 0.4);
+  }
+  50% {
+    box-shadow: 4px 4px 0px rgba(0,0,0,1), 8px -8px 25px rgba(124, 58, 237, 0.4), -8px 8px 25px rgba(220, 42, 54, 0.4);
+  }
+  75% {
+    box-shadow: 4px 4px 0px rgba(0,0,0,1), 8px 8px 25px rgba(37, 99, 235, 0.4), -8px -8px 25px rgba(22, 163, 74, 0.4);
+  }
+  100% {
+    box-shadow: 4px 4px 0px rgba(0,0,0,1), -8px -8px 25px rgba(220, 42, 54, 0.4), 8px 8px 25px rgba(37, 99, 235, 0.4);
+  }
+}
+
+.animate-multicolor-glow {
+  animation: multicolor-glow 6s infinite ease-in-out;
+}
+
+@keyframes multicolor-glow-button {
+  0% {
+    box-shadow: 4px 4px 0px rgba(0,0,0,1), -10px -10px 30px rgba(239, 68, 68, 0.9), 10px 10px 30px rgba(59, 130, 246, 0.9), 0px 0px 15px rgba(236, 72, 153, 0.6);
+  }
+  25% {
+    box-shadow: 4px 4px 0px rgba(0,0,0,1), -10px 10px 30px rgba(34, 197, 94, 0.9), 10px -10px 30px rgba(245, 158, 11, 0.9), 0px 0px 15px rgba(6, 182, 212, 0.6);
+  }
+  50% {
+    box-shadow: 4px 4px 0px rgba(0,0,0,1), 10px -10px 30px rgba(168, 85, 247, 0.9), -10px 10px 30px rgba(239, 68, 68, 0.9), 0px 0px 15px rgba(236, 72, 153, 0.6);
+  }
+  75% {
+    box-shadow: 4px 4px 0px rgba(0,0,0,1), 10px 10px 30px rgba(59, 130, 246, 0.9), -10px -10px 30px rgba(34, 197, 94, 0.9), 0px 0px 15px rgba(245, 158, 11, 0.6);
+  }
+  100% {
+    box-shadow: 4px 4px 0px rgba(0,0,0,1), -10px -10px 30px rgba(239, 68, 68, 0.9), 10px 10px 30px rgba(59, 130, 246, 0.9), 0px 0px 15px rgba(236, 72, 153, 0.6);
+  }
+}
+
+.animate-multicolor-glow-button {
+  animation: multicolor-glow-button 4s infinite ease-in-out;
+}
+
+

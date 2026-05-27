@@ -5,7 +5,7 @@ export const SNAP_THRESHOLD = 40;
 export const BLOCK_VERTICAL_SPACING = 27;
 export const LOOP_HEADER_HEIGHT = 36;
 export const LOOP_FOOTER_HEIGHT = 27;
-export const LOOP_MIN_INNER_HEIGHT = 35;
+export const LOOP_MIN_INNER_HEIGHT = 18;
 
 export const getEventoSvgDimensions = (text: string): SvgDimensions => {
   if (text.includes("soltar todos")) {
@@ -55,7 +55,7 @@ export const getControlSvgDimensions = (text: string): SvgDimensions => {
     return {
       width: 230,
       viewBox: "0 0 153 24",
-      path: "M19 0.5H2C1.17157 0.5 0.5 1.17157 0.5 2V17C0.5 17.8284 1.17157 18.5 2 18.5H19C19.2761 18.5 19.5 18.7239 19.5 19V22C19.5 22.8284 20.1716 23.5 21 23.5H36C36.8284 23.5 37.5 22.8284 37.5 22V19C37.5 18.7239 37.7239 18.5 38 18.5H151C151.828 18.5 152.5 17.8284 152.5 17V2C152.5 1.17157 151.828 0.5 151 0.5H38C37.7239 0.5 37.5 0.72386 37.5 1V4C37.5 4.82843 36.8284 5.5 36 5.5H21C20.1716 5.5 19.5 4.82843 19.5 4V1C19.5 0.72386 19.2761 0.5 19 0.5Z",
+      path: "M19 0.5H2C1.17157 0.5 0.5 1.17157 0.5 2V17C0.5 17.8284 1.17157 18.5 2 18.5H151C151.828 18.5 152.5 17.8284 152.5 17V2C152.5 1.17157 151.828 0.5 151 0.5H38C37.7239 0.5 37.5 0.72386 37.5 1V4C37.5 4.82843 36.8284 5.5 36 5.5H21C20.1716 5.5 19.5 4.82843 19.5 4V1C19.5 0.72386 19.2761 0.5 19 0.5Z",
     };
   }
   return {
@@ -66,6 +66,20 @@ export const getControlSvgDimensions = (text: string): SvgDimensions => {
 };
 
 export const getMovimientoSvgDimensions = (text: string): SvgDimensions => {
+  if (text.includes("Detener todos los motores")) {
+    return {
+      width: 340,
+      viewBox: "0 0 227 24",
+      path: "M19 0.5H2C1.17157 0.5 0.5 1.17157 0.5 2V17C0.5 17.8284 1.17157 18.5 2 18.5H19C19.2761 18.5 19.5 18.7239 19.5 19V22C19.5 22.8284 20.1716 23.5 21 23.5H36C36.8284 23.5 37.5 22.8284 37.5 22V19C37.5 18.7239 37.7239 18.5 38 18.5H225C225.828 18.5 226.5 17.8284 226.5 17V2C226.5 1.17157 225.828 0.5 225 0.5H38C37.7239 0.5 37.5 0.72386 37.5 1V4C37.5 4.82843 36.8284 5.5 36 5.5H21C20.1716 5.5 19.5 4.82843 19.5 4V1C19.5 0.72386 19.2761 0.5 19 0.5Z",
+    };
+  }
+  if (text.includes("Detener motor")) {
+    return {
+      width: 240,
+      viewBox: "0 0 160 24",
+      path: "M19 0.5H2C1.17157 0.5 0.5 1.17157 0.5 2V17C0.5 17.8284 1.17157 18.5 2 18.5H19C19.2761 18.5 19.5 18.7239 19.5 19V22C19.5 22.8284 20.1716 23.5 21 23.5H36C36.8284 23.5 37.5 22.8284 37.5 22V19C37.5 18.7239 37.7239 18.5 38 18.5H158C158.828 18.5 159.5 17.8284 159.5 17V2C159.5 1.17157 158.828 0.5 158 0.5H38C37.7239 0.5 37.5 0.72386 37.5 1V4C37.5 4.82843 36.8284 5.5 36 5.5H21C20.1716 5.5 19.5 4.82843 19.5 4V1C19.5 0.72386 19.2761 0.5 19 0.5Z",
+    };
+  }
   if (text.includes("Avanzar") && text.includes("adelante")) {
     return {
       width: 310,
@@ -120,10 +134,7 @@ export const LOOP_INNER_X_OFFSET = 26;
 export const CHILD_BLOCK_HEIGHT = 62;
 
 export const getLoopTotalHeight = (childrenCount: number): number => {
-  const innerHeight =
-    childrenCount === 0
-      ? LOOP_MIN_INNER_HEIGHT
-      : childrenCount * BLOCK_VERTICAL_SPACING;
+  const innerHeight = childrenCount === 0 ? LOOP_MIN_INNER_HEIGHT : childrenCount * 18;
   return (
     (LOOP_HEADER_HEIGHT + innerHeight + LOOP_FOOTER_HEIGHT + 6) * LOOP_SCALE
   );

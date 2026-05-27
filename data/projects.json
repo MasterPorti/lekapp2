@@ -1,0 +1,204 @@
+[
+  {
+    "id": "proj-motores",
+    "name": "Dirección Total de Motores",
+    "blocks": [
+      {
+        "id": "e-tri",
+        "x": 100,
+        "y": 100,
+        "type": "evento",
+        "text": "Al presionar boton TRIANGULO",
+        "color": "#F97316",
+        "stroke": "#EA580C",
+        "param": "TRIANGULO",
+        "nextBlockId": "m-tri"
+      },
+      {
+        "id": "m-tri",
+        "x": 100,
+        "y": 127,
+        "type": "movimiento",
+        "text": "Avanzar todos adelante 100%",
+        "color": "#3B82F6",
+        "stroke": "#2563EB",
+        "param": "100",
+        "parentId": "e-tri"
+      },
+      {
+        "id": "e-x",
+        "x": 500,
+        "y": 100,
+        "type": "evento",
+        "text": "Al presionar boton X",
+        "color": "#F97316",
+        "stroke": "#EA580C",
+        "param": "X",
+        "nextBlockId": "m-x"
+      },
+      {
+        "id": "m-x",
+        "x": 500,
+        "y": 127,
+        "type": "movimiento",
+        "text": "Avanzar todos atras 100%",
+        "color": "#3B82F6",
+        "stroke": "#2563EB",
+        "param": "100",
+        "parentId": "e-x"
+      },
+      {
+        "id": "e-cua",
+        "x": 100,
+        "y": 280,
+        "type": "evento",
+        "text": "Al presionar boton CUADRADO",
+        "color": "#F97316",
+        "stroke": "#EA580C",
+        "param": "CUADRADO",
+        "nextBlockId": "m-cua-1"
+      },
+      {
+        "id": "m-cua-1",
+        "x": 100,
+        "y": 307,
+        "type": "movimiento",
+        "text": "Motor TRIANGULO Atras 100%",
+        "color": "#3B82F6",
+        "stroke": "#2563EB",
+        "param": "TRIANGULO:100",
+        "parentId": "e-cua",
+        "nextBlockId": "m-cua-2"
+      },
+      {
+        "id": "m-cua-2",
+        "x": 100,
+        "y": 334,
+        "type": "movimiento",
+        "text": "Motor CUADRADO Atras 100%",
+        "color": "#3B82F6",
+        "stroke": "#2563EB",
+        "param": "CUADRADO:100",
+        "parentId": "m-cua-1",
+        "nextBlockId": "m-cua-3"
+      },
+      {
+        "id": "m-cua-3",
+        "x": 100,
+        "y": 361,
+        "type": "movimiento",
+        "text": "Motor CIRCULO Adelante 100%",
+        "color": "#3B82F6",
+        "stroke": "#2563EB",
+        "param": "CIRCULO:100",
+        "parentId": "m-cua-2",
+        "nextBlockId": "m-cua-4"
+      },
+      {
+        "id": "m-cua-4",
+        "x": 100,
+        "y": 388,
+        "type": "movimiento",
+        "text": "Motor X Adelante 100%",
+        "color": "#3B82F6",
+        "stroke": "#2563EB",
+        "param": "X:100",
+        "parentId": "m-cua-3"
+      },
+      {
+        "id": "e-cir",
+        "x": 500,
+        "y": 280,
+        "type": "evento",
+        "text": "Al presionar boton CIRCULO",
+        "color": "#F97316",
+        "stroke": "#EA580C",
+        "param": "CIRCULO",
+        "nextBlockId": "m-cir-1"
+      },
+      {
+        "id": "m-cir-1",
+        "x": 500,
+        "y": 307,
+        "type": "movimiento",
+        "text": "Motor TRIANGULO Adelante 100%",
+        "color": "#3B82F6",
+        "stroke": "#2563EB",
+        "param": "TRIANGULO:100",
+        "parentId": "e-cir",
+        "nextBlockId": "m-cir-2"
+      },
+      {
+        "id": "m-cir-2",
+        "x": 500,
+        "y": 334,
+        "type": "movimiento",
+        "text": "Motor CUADRADO Adelante 100%",
+        "color": "#3B82F6",
+        "stroke": "#2563EB",
+        "param": "CUADRADO:100",
+        "parentId": "m-cir-1",
+        "nextBlockId": "m-cir-3"
+      },
+      {
+        "id": "m-cir-3",
+        "x": 500,
+        "y": 361,
+        "type": "movimiento",
+        "text": "Motor CIRCULO Atras 100%",
+        "color": "#3B82F6",
+        "stroke": "#2563EB",
+        "param": "CIRCULO:100",
+        "parentId": "m-cir-2",
+        "nextBlockId": "m-cir-4"
+      },
+      {
+        "id": "m-cir-4",
+        "x": 500,
+        "y": 388,
+        "type": "movimiento",
+        "text": "Motor X Atras 100%",
+        "color": "#3B82F6",
+        "stroke": "#2563EB",
+        "param": "X:100",
+        "parentId": "m-cir-3"
+      },
+      {
+        "id": "e-stop",
+        "x": 900,
+        "y": 100,
+        "type": "evento",
+        "text": "Al soltar todos los botones",
+        "color": "#F97316",
+        "stroke": "#EA580C",
+        "nextBlockId": "m-stop"
+      },
+      {
+        "id": "m-stop",
+        "x": 900,
+        "y": 127,
+        "type": "movimiento",
+        "text": "Detener todos los motores",
+        "color": "#3B82F6",
+        "stroke": "#2563EB",
+        "parentId": "e-stop"
+      }
+    ],
+    "createdAt": "2026-05-23T16:10:00.000Z",
+    "updatedAt": "2026-05-23T16:10:00.000Z"
+  },
+  {
+    "id": "proj-l0ucbhz",
+    "name": "Botón Veloz",
+    "blocks": [],
+    "createdAt": "2026-05-23T03:33:10.762Z",
+    "updatedAt": "2026-05-23T03:33:11.457Z"
+  },
+  {
+    "id": "proj-5wpe6bb",
+    "name": "Juan",
+    "blocks": [],
+    "createdAt": "2026-05-23T04:00:39.633Z",
+    "updatedAt": "2026-05-23T16:00:10.601Z"
+  }
+]

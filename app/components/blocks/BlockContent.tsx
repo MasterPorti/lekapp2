@@ -8,6 +8,32 @@ interface BlockContentProps {
 }
 
 export const BlockContent = ({ type, text, param, onParamClick }: BlockContentProps) => {
+  if (type === "movimiento" && text.includes("Detener todos los motores")) {
+    return (
+      <div className="absolute top-[45%] left-[68px] -translate-y-1/2 font-mono text-white text-sm whitespace-nowrap select-none flex items-center gap-2">
+        <span className="w-4 h-4 bg-red-600 rounded-full border border-red-800"></span>
+        Detener todos los motores
+      </div>
+    );
+  }
+
+  if (param && type === "movimiento" && text.includes("Detener motor")) {
+    return (
+      <div className="absolute top-[45%] left-[68px] -translate-y-1/2 font-mono text-white text-sm whitespace-nowrap select-none flex items-center gap-1">
+        Detener motor{" "}
+        <span
+          className="bg-blue-700 px-1.5 py-0.5 rounded cursor-pointer hover:bg-blue-600 inline-flex items-center justify-center"
+          onClick={(e) => {
+            e.stopPropagation();
+            onParamClick?.("icon", "blue");
+          }}
+        >
+          <ParamIcon param={param} size={14} />
+        </span>
+      </div>
+    );
+  }
+
   if (param && type === "movimiento" && text.includes("Motor")) {
     return (
       <div className="absolute top-[45%] left-[68px] -translate-y-1/2 font-mono text-white text-sm whitespace-nowrap select-none flex items-center gap-1">
@@ -119,12 +145,12 @@ export const BlockContent = ({ type, text, param, onParamClick }: BlockContentPr
     );
   }
 
-  if (type === "control-loop" && param) {
+  if (type === "control-loop" && param !== undefined) {
     return (
       <div className="absolute top-[27px] left-[68px] -translate-y-1/2 font-mono text-black text-sm whitespace-nowrap select-none flex items-center gap-1">
         Repetir{" "}
         <span
-          className="bg-yellow-600 px-1.5 py-0.5 rounded cursor-pointer hover:bg-yellow-500 text-white"
+          className="bg-yellow-600 px-1.5 py-0.5 rounded cursor-pointer hover:bg-yellow-500 text-white min-w-[20px] inline-block text-center"
           onClick={(e) => {
             e.stopPropagation();
             onParamClick?.("number");
