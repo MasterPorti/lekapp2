@@ -1,21 +1,17 @@
 import { NextResponse } from "next/server";
 import { query } from "../../../lib/db";
+import { getSessionUser, loginUser } from "../../../lib/auth";
 
 export async function POST(req: Request) {
   try {
-    const { email, code, isFreePlan, freeProjectId } = await req.json();
-    if (!email) {
-      return NextResponse.json({ error: "Falta el correo del usuario" }, { status: 400 });
+    const sessionUser = await getSessionUser();
+    if (!sessionUser) {
+      return NextResponse.json({ error: "No autenticado" }, { status: 401 });
     }
 
-    const cleanEmail = email.toLowerCase().trim();
-
-    // Find the user ID
-    const userRes = await query("SELECT id FROM users WHERE email = $1", [cleanEmail]);
-    if (userRes.rows.length === 0) {
-      return NextResponse.json({ error: "Usuario no encontrado" }, { status: 404 });
-    }
-    const userId = userRes.rows[0].id;
+    const { code, isFreePlan, freeProjectId } = await req.json();
+    const cleanEmail = sessionUser.email;
+    const userId = sessionUser.id;
 
     if (isFreePlan) {
       // Find the project to unlock for free
@@ -51,10 +47,21 @@ export async function POST(req: Request) {
         [userId]
       );
       
+      const newSessionUser = {
+        id: updatedUser.rows[0].id,
+        username: updatedUser.rows[0].username,
+        email: updatedUser.rows[0].email,
+        role: updatedUser.rows[0].role as "user" | "admin",
+        unlocked: !!updatedUser.rows[0].unlocked,
+        kit_code: updatedUser.rows[0].kit_code
+      };
+
+      await loginUser(newSessionUser);
+      
       return NextResponse.json({
         success: true,
         message: "Plan gratuito activado con éxito",
-        user: updatedUser.rows[0]
+        user: newSessionUser
       });
     } else {
       // Kit code entered
@@ -107,10 +114,21 @@ export async function POST(req: Request) {
         [userId]
       );
 
+      const newSessionUser = {
+        id: updatedUser.rows[0].id,
+        username: updatedUser.rows[0].username,
+        email: updatedUser.rows[0].email,
+        role: updatedUser.rows[0].role as "user" | "admin",
+        unlocked: !!updatedUser.rows[0].unlocked,
+        kit_code: updatedUser.rows[0].kit_code
+      };
+
+      await loginUser(newSessionUser);
+
       return NextResponse.json({
         success: true,
         message: "Código de kit validado y contenido desbloqueado con éxito",
-        user: updatedUser.rows[0]
+        user: newSessionUser
       });
     }
   } catch (error) {

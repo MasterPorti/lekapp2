@@ -42,12 +42,12 @@ export const useAuth = () => {
     setLoading(false);
   }, []);
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string, captchaToken?: string) => {
     try {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, captchaToken }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -82,12 +82,12 @@ export const useAuth = () => {
     }
   };
 
-  const register = async (username: string, email: string, password: string) => {
+  const register = async (username: string, email: string, password: string, captchaToken?: string) => {
     try {
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, email, password }),
+        body: JSON.stringify({ username, email, password, captchaToken }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -159,6 +159,9 @@ export const useAuth = () => {
   };
 
   const logout = () => {
+    fetch("/api/auth/logout", { method: "POST" }).catch((e) => {
+      console.error("Error signing out from server:", e);
+    });
     setUser(null);
     localStorage.removeItem("lek_user");
     deleteCookie("lek_user_email");

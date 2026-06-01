@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "../hooks/useAuth";
+import { Turnstile } from "../components/ui/Turnstile";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -18,6 +19,17 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+
+  const [isMounted, setIsMounted] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setIsMounted(true), 0);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const isLocalhost = typeof window !== "undefined" &&
+    (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
 
   // Verification States
   const [verificationEmail, setVerificationEmail] = useState("");
@@ -50,12 +62,17 @@ export default function RegisterPage() {
       return;
     }
 
+    if (isMounted && !isLocalhost && !captchaToken) {
+      setError("Por favor, completa la verificación de seguridad");
+      return;
+    }
+
     setLoading(true);
     setError("");
     setSuccess("");
 
     try {
-      await register(username.trim(), email.trim(), password);
+      await register(username.trim(), email.trim(), password, captchaToken || undefined);
       setSuccess("¡Cuenta creada! Se ha enviado un código de verificación a tu correo.");
       setVerificationEmail(email.trim());
       setLoading(false);
@@ -317,9 +334,17 @@ export default function RegisterPage() {
               </div>
             </div>
 
+            {isMounted && !isLocalhost && (
+              <Turnstile
+                siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || "1x00000000000000000000AA"}
+                onSuccess={(token) => setCaptchaToken(token)}
+                onExpire={() => setCaptchaToken(null)}
+              />
+            )}
+
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || (isMounted && !isLocalhost && !captchaToken)}
               className="w-full bg-[#dc2a36] hover:bg-[#c02030] disabled:bg-gray-400 text-white font-bold uppercase tracking-wider text-xs py-3 border-2 border-gray-900 shadow-[3px_3px_0px_rgba(0,0,0,1)] active:translate-y-0.5 active:shadow-[1px_1px_0px_rgba(0,0,0,1)] transition-all cursor-pointer mt-4 rounded-none"
             >
               {loading ? "Registrando..." : "Registrar Cuenta →"}

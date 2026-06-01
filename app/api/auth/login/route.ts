@@ -1,12 +1,20 @@
 import { NextResponse } from "next/server";
 import { query } from "../../../lib/db";
 import { verifyPassword } from "../../../lib/crypto";
+import { loginUser, verifyTurnstileToken } from "../../../lib/auth";
 
 export async function POST(req: Request) {
   try {
-    const { email, password } = await req.json();
+    const { email, password, captchaToken } = await req.json();
     if (!email || !password) {
       return NextResponse.json({ error: "Faltan datos obligatorios" }, { status: 400 });
+    }
+
+    // Verify Captcha
+    const ip = req.headers.get("x-forwarded-for") || undefined;
+    const isValidCaptcha = await verifyTurnstileToken(captchaToken, ip);
+    if (!isValidCaptcha) {
+      return NextResponse.json({ error: "Verificación de seguridad inválida" }, { status: 400 });
     }
 
     const res = await query("SELECT * FROM users WHERE email = $1", [email.toLowerCase().trim()]);
@@ -42,16 +50,20 @@ export async function POST(req: Request) {
       }, { status: 403 });
     }
 
+    const sessionUser = {
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      role: user.role as "user" | "admin",
+      unlocked: !!user.unlocked,
+      kit_code: user.kit_code
+    };
+
+    await loginUser(sessionUser);
+
     return NextResponse.json({
       success: true,
-      user: {
-        id: user.id,
-        username: user.username,
-        email: user.email,
-        role: user.role,
-        unlocked: user.unlocked,
-        kit_code: user.kit_code
-      }
+      user: sessionUser
     });
   } catch (error) {
     console.error("Login API error:", error);

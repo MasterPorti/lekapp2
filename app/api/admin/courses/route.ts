@@ -1,20 +1,16 @@
 import { NextResponse } from "next/server";
 import { query } from "../../../lib/db";
+import { getSessionUser } from "../../../lib/auth";
 
 // Helper to check if caller is admin
-async function isAdmin(req: Request): Promise<boolean> {
-  const cookieHeader = req.headers.get("cookie") || "";
-  const match = cookieHeader.match(/lek_user_email=([^;]+)/);
-  if (!match) return false;
-
-  const email = decodeURIComponent(match[1]).toLowerCase().trim();
-  const userCheck = await query("SELECT role FROM users WHERE email = $1", [email]);
-  return userCheck.rows.length > 0 && userCheck.rows[0].role === "admin";
+async function isAdmin(): Promise<boolean> {
+  const sessionUser = await getSessionUser();
+  return sessionUser !== null && sessionUser.role === "admin";
 }
 
 export async function POST(req: Request) {
   try {
-    if (!(await isAdmin(req))) {
+    if (!(await isAdmin())) {
       return NextResponse.json({ error: "Acceso no autorizado" }, { status: 403 });
     }
 

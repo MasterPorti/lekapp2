@@ -2,12 +2,20 @@ import { NextResponse } from "next/server";
 import { query } from "../../../lib/db";
 import { hashPassword } from "../../../lib/crypto";
 import { sendVerificationEmail } from "../../../lib/email";
+import { verifyTurnstileToken } from "../../../lib/auth";
 
 export async function POST(req: Request) {
   try {
-    const { username, email, password } = await req.json();
+    const { username, email, password, captchaToken } = await req.json();
     if (!username || !email || !password) {
       return NextResponse.json({ error: "Todos los campos son obligatorios" }, { status: 400 });
+    }
+
+    // Verify Captcha
+    const ip = req.headers.get("x-forwarded-for") || undefined;
+    const isValidCaptcha = await verifyTurnstileToken(captchaToken, ip);
+    if (!isValidCaptcha) {
+      return NextResponse.json({ error: "Verificación de seguridad inválida" }, { status: 400 });
     }
 
     const cleanEmail = email.toLowerCase().trim();

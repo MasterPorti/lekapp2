@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { query } from "../../../lib/db";
+import { loginUser } from "../../../lib/auth";
 
 export async function POST(req: Request) {
   try {
@@ -37,16 +38,20 @@ export async function POST(req: Request) {
       [user.id]
     );
 
+    const sessionUser = {
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      role: user.role as "user" | "admin",
+      unlocked: !!user.unlocked,
+      kit_code: user.kit_code
+    };
+
+    await loginUser(sessionUser);
+
     return NextResponse.json({
       success: true,
-      user: {
-        id: user.id,
-        username: user.username,
-        email: user.email,
-        role: user.role,
-        unlocked: user.unlocked,
-        kit_code: user.kit_code
-      }
+      user: sessionUser
     });
   } catch (error) {
     console.error("Verify API error:", error);

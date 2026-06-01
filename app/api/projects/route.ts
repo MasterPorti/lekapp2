@@ -1,35 +1,14 @@
 import { NextResponse } from "next/server";
 import { query } from "../../lib/db";
+import { getSessionUser } from "../../lib/auth";
 
-// Helper to get active user email from cookie or request header
-function getUserEmail(req: Request): string | null {
-  const cookieHeader = req.headers.get("cookie") || "";
-  const match = cookieHeader.match(/lek_user_email=([^;]+)/);
-  if (match) {
-    return decodeURIComponent(match[1]).toLowerCase().trim();
-  }
-  
-  const headerEmail = req.headers.get("x-user-email");
-  if (headerEmail) {
-    return headerEmail.toLowerCase().trim();
-  }
-
-  // Also check query param as fallback
-  const { searchParams } = new URL(req.url);
-  const paramEmail = searchParams.get("email");
-  if (paramEmail) {
-    return paramEmail.toLowerCase().trim();
-  }
-
-  return null;
-}
-
-export async function GET(req: Request) {
+export async function GET() {
   try {
-    const email = getUserEmail(req);
-    if (!email) {
+    const sessionUser = await getSessionUser();
+    if (!sessionUser) {
       return NextResponse.json([], { status: 200 }); // Return empty array if not authenticated
     }
+    const email = sessionUser.email;
 
     const res = await query(
       "SELECT id, name, blocks, created_at, updated_at FROM projects WHERE user_email = $1 ORDER BY updated_at DESC",
@@ -53,10 +32,11 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    const email = getUserEmail(req);
-    if (!email) {
+    const sessionUser = await getSessionUser();
+    if (!sessionUser) {
       return NextResponse.json({ error: "No autenticado" }, { status: 401 });
     }
+    const email = sessionUser.email;
 
     const { id, name, blocks } = await req.json();
     if (!id || !name) {
@@ -105,10 +85,11 @@ export async function POST(req: Request) {
 
 export async function DELETE(req: Request) {
   try {
-    const email = getUserEmail(req);
-    if (!email) {
+    const sessionUser = await getSessionUser();
+    if (!sessionUser) {
       return NextResponse.json({ error: "No autenticado" }, { status: 401 });
     }
+    const email = sessionUser.email;
 
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
