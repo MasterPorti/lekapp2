@@ -68,6 +68,13 @@ export const ControlSimulatorModal = ({
   };
 
   const setContribution = (executionKey: string, shape: string, value: number) => {
+    // Clear this motor's contribution from all other execution keys to act as an override
+    Object.keys(motorContributions.current).forEach((key) => {
+      if (key !== executionKey && motorContributions.current[key]) {
+        delete motorContributions.current[key][shape];
+      }
+    });
+
     if (!motorContributions.current[executionKey]) {
       motorContributions.current[executionKey] = {};
     }
@@ -329,9 +336,9 @@ export const ControlSimulatorModal = ({
       : {};
 
     return (
-      <div className="w-24 flex flex-col items-center gap-1 p-2 bg-zinc-900/60 border border-zinc-800/80 rounded-xl select-none">
-        <span className="text-xs font-mono text-zinc-400 font-bold uppercase">{label}</span>
-        <svg className="w-20 h-20" viewBox="0 0 100 100">
+      <div className="w-20 h-[112px] sm:w-24 sm:h-[136px] flex flex-col items-center gap-0.5 sm:gap-1 p-1.5 sm:p-2 bg-zinc-900/60 border border-zinc-800/80 rounded-xl select-none flex-none">
+        <span className="text-[9px] sm:text-xs font-mono text-zinc-400 font-bold uppercase tracking-wider">{label}</span>
+        <svg className="w-16 h-16 sm:w-20 sm:h-20" viewBox="0 0 100 100">
           {/* Tire ring */}
           <circle cx="50" cy="50" r="44" fill="#0f0f11" stroke="#27272a" strokeWidth="6" />
           <circle cx="50" cy="50" r="38" fill="#18181b" stroke="#3f3f46" strokeWidth="2" />
@@ -362,20 +369,99 @@ export const ControlSimulatorModal = ({
             }
           />
           {/* Small inner shape icon */}
-          <g transform="translate(40, 40)">
-            <ParamIcon param={shape} size={20} />
+          <g transform="translate(41, 41)">
+            <ParamIcon param={shape} size={18} />
           </g>
         </svg>
 
-        <div className="flex flex-col items-center font-mono mt-1 text-[10px]">
-          <span className={`px-2 py-0.5 rounded text-[11px] font-bold ${isSpinning ? "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 animate-pulse" : "bg-zinc-800 text-zinc-500"}`}>
+        <div className="flex flex-col items-center font-mono mt-0.5 sm:mt-1 text-[8px] sm:text-[10px] w-full">
+          <span className={`px-1.5 sm:px-2 py-0.5 rounded text-[9px] sm:text-[11px] font-bold ${isSpinning ? "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 animate-pulse" : "bg-zinc-800 text-zinc-500"}`}>
             {isSpinning ? `${motor.speed}%` : "APAGADO"}
           </span>
-          {isSpinning && (
-            <span className="text-[10px] text-zinc-400 mt-0.5">
-              {motor.direction === "atras" ? "← Atrás" : "Adelante →"}
-            </span>
-          )}
+          <span className={`text-[8px] sm:text-[10px] text-zinc-400 mt-0.5 transition-opacity duration-300 ${isSpinning ? "opacity-100" : "opacity-0 select-none pointer-events-none"}`}>
+            {motor.direction === "atras" ? "← Atrás" : "Adelante →"}
+          </span>
+        </div>
+      </div>
+    );
+  };
+
+  const renderMobileWheel = (label: string, shape: string, motor: MotorState) => {
+    const isSpinning = motor.speed > 0;
+    const spinDuration = isSpinning ? `${2 / (motor.speed / 10)}s` : "0s";
+    const spinDirection = motor.direction === "atras" ? "reverse" : "normal";
+
+    const spinStyle = isSpinning
+      ? {
+          animation: "spin linear infinite",
+          animationDuration: spinDuration,
+          animationDirection: spinDirection as any,
+          transformOrigin: "50px 50px",
+        }
+      : {};
+
+    return (
+      <div className="w-full h-full flex flex-col items-center justify-center p-2 bg-zinc-900/40 border border-zinc-800/60 rounded-2xl select-none relative overflow-hidden">
+        {/* Subtle shape color background glow when active */}
+        {isSpinning && (
+          <div className={`absolute inset-0 opacity-[0.08] pointer-events-none transition-all duration-300 ${
+            shape === "TRIANGULO" ? "bg-green-500" :
+            shape === "CIRCULO" ? "bg-red-500" :
+            shape === "CUADRADO" ? "bg-blue-500" :
+            "bg-purple-500"
+          }`} />
+        )}
+        
+        {/* Top Label & Active Status indicator */}
+        <div className="w-full flex items-center justify-between px-1.5 mb-1 z-10">
+          <span className="text-[10px] font-mono text-zinc-400 font-bold uppercase tracking-wider">{label}</span>
+          <span className={`w-2 h-2 rounded-full ${isSpinning ? "bg-yellow-400 animate-pulse" : "bg-zinc-800"}`} />
+        </div>
+
+        {/* Large SVG wheel */}
+        <svg className="w-[72px] h-[72px] max-w-[80%] max-h-[60%] z-10" viewBox="0 0 100 100">
+          {/* Tire ring */}
+          <circle cx="50" cy="50" r="44" fill="#0f0f11" stroke="#27272a" strokeWidth="6" />
+          <circle cx="50" cy="50" r="38" fill="#18181b" stroke="#3f3f46" strokeWidth="2" />
+          
+          {/* Rotatable wheel spokes/treads */}
+          <g style={spinStyle}>
+            <circle cx="50" cy="50" r="28" fill="none" stroke="#27272a" strokeWidth="3" strokeDasharray="6 6" />
+            <line x1="50" y1="12" x2="50" y2="88" stroke="#27272a" strokeWidth="5" />
+            <line x1="12" y1="50" x2="88" y2="50" stroke="#27272a" strokeWidth="5" />
+            <line x1="23" y1="23" x2="77" y2="77" stroke="#27272a" strokeWidth="3" />
+            <line x1="77" y1="23" x2="23" y2="77" stroke="#27272a" strokeWidth="3" />
+          </g>
+
+          {/* Hub center colored by shape */}
+          <circle
+            cx="50"
+            cy="50"
+            r="18"
+            className={
+              shape === "TRIANGULO"
+                ? "fill-green-600"
+                : shape === "CIRCULO"
+                ? "fill-red-600"
+                : shape === "CUADRADO"
+                ? "fill-blue-600"
+                : "fill-purple-600"
+            }
+          />
+          {/* Small inner shape icon */}
+          <g transform="translate(41, 41)">
+            <ParamIcon param={shape} size={18} />
+          </g>
+        </svg>
+
+        {/* Speed Badge & Direction Indicator */}
+        <div className="flex flex-col items-center mt-2 z-10 w-full">
+          <span className={`px-2 py-0.5 rounded text-[10px] font-bold tracking-wide font-mono ${isSpinning ? "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 animate-pulse" : "bg-zinc-800 text-zinc-500"}`}>
+            {isSpinning ? `${motor.speed}%` : "APAGADO"}
+          </span>
+          <span className={`text-[9px] text-zinc-400 mt-1 transition-opacity duration-300 font-sans ${isSpinning ? "opacity-100" : "opacity-0 select-none pointer-events-none"}`}>
+            {motor.direction === "atras" ? "← Atrás" : "Adelante →"}
+          </span>
         </div>
       </div>
     );
@@ -384,7 +470,7 @@ export const ControlSimulatorModal = ({
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-zinc-950 text-white font-mono overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between px-6 py-4 bg-zinc-900 border-b border-zinc-800">
+      <div className="flex items-center justify-between px-6 py-3 bg-zinc-900 border-b border-zinc-800">
         <div className="flex items-center gap-3">
           <svg className="w-6 h-6 text-zinc-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M6 12h4M8 10v4" />
@@ -434,16 +520,30 @@ export const ControlSimulatorModal = ({
       </div>
 
       {/* Content Area */}
-      <div className="flex-1 flex flex-col md:flex-row overflow-y-auto md:overflow-hidden">
+      <div className="flex-1 flex flex-col sm:flex-row overflow-hidden min-h-0">
         
         {/* Top / Left Half: Motor Simulation */}
-        <div className="w-full md:flex-1 flex flex-col items-center justify-center p-6 border-b md:border-b-0 md:border-r border-zinc-900 bg-zinc-950 relative flex-none md:flex-1">
-          <div className="absolute top-4 left-6">
-            <span className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Simulación de Motores</span>
+        <div className="w-full sm:w-1/2 flex flex-col items-center justify-center p-4 sm:p-6 border-b sm:border-b-0 sm:border-r border-zinc-900 bg-zinc-950 relative flex-[3] sm:flex-1 min-h-0">
+          <div className="absolute top-3 left-4 sm:top-4 sm:left-6 z-10">
+            <span className="text-[10px] sm:text-xs font-bold text-zinc-500 uppercase tracking-widest">Simulación de Motores</span>
           </div>
 
-          {/* Robot Chassis Drawing */}
-          <div className="relative w-80 h-[360px] bg-zinc-900/20 border-2 border-zinc-900 rounded-3xl p-4 flex flex-col justify-between items-center shadow-inner">
+          {/* Subtle Grid Background */}
+          <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{
+            backgroundImage: "radial-gradient(circle, #fff 1px, transparent 1px)",
+            backgroundSize: "16px 16px"
+          }} />
+
+          {/* Mobile view: 2x2 Grid */}
+          <div className="sm:hidden w-full h-full pt-9 pb-2 px-1 grid grid-cols-2 grid-rows-2 gap-2 min-h-0">
+            {renderMobileWheel("FL", "TRIANGULO", motors.TRIANGULO)}
+            {renderMobileWheel("FR", "CIRCULO", motors.CIRCULO)}
+            {renderMobileWheel("RL", "CUADRADO", motors.CUADRADO)}
+            {renderMobileWheel("RR", "X", motors.X)}
+          </div>
+
+          {/* Desktop view: Robot Chassis Drawing */}
+          <div className="hidden sm:flex relative w-80 h-[350px] bg-zinc-900/10 border-2 border-zinc-900 rounded-3xl p-3 sm:p-4 flex flex-col justify-between items-center shadow-inner">
             {/* Front Axle Line */}
             <div className="absolute top-1/4 left-0 right-0 h-0.5 bg-zinc-800/80 -z-10" />
             {/* Rear Axle Line */}
@@ -470,15 +570,22 @@ export const ControlSimulatorModal = ({
         </div>
 
         {/* Bottom / Right Half: Controls & Active Code */}
-        <div className="w-full md:flex-1 flex flex-col bg-zinc-900/30 flex-none md:flex-1 md:overflow-hidden">
+        <div className="w-full sm:w-1/2 flex flex-col bg-zinc-900/10 flex-[2] sm:flex-1 min-h-0">
           
           {/* Diamond Gamepad area */}
-          <div className="flex-1 md:flex-1 min-h-[270px] md:min-h-0 flex flex-col items-center justify-center p-6 border-b border-zinc-900">
-            <span className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-6 self-start">Controlador Virtual</span>
+          <div className="flex-1 flex flex-col items-center justify-center p-4 sm:p-6 border-b border-zinc-900 min-h-0 relative">
+            <div className="absolute top-3 left-4 sm:top-4 sm:left-6">
+              <span className="text-[10px] sm:text-xs font-bold text-zinc-500 uppercase tracking-widest">Controlador Virtual</span>
+            </div>
             
             {/* Gamepad diamond button container */}
-            <div className="relative w-48 h-48 flex items-center justify-center bg-zinc-900/50 border border-zinc-800 rounded-full shadow-lg">
+            <div className="relative w-36 h-36 sm:w-44 sm:h-44 flex items-center justify-center bg-zinc-900/40 border border-zinc-800/80 rounded-full shadow-2xl">
               
+              {/* Inner subtle branding label */}
+              <div className="absolute text-[8px] sm:text-[10px] font-bold text-zinc-700/80 font-mono tracking-widest uppercase pointer-events-none select-none">
+                LEK 2
+              </div>
+
               {/* TRIANGULO (Top) */}
               <button
                 type="button"
@@ -487,13 +594,13 @@ export const ControlSimulatorModal = ({
                 onMouseLeave={() => activeButtons.TRIANGULO && handleButtonRelease("TRIANGULO")}
                 onTouchStart={(e) => { e.preventDefault(); handleButtonPress("TRIANGULO"); }}
                 onTouchEnd={(e) => { e.preventDefault(); handleButtonRelease("TRIANGULO"); }}
-                className={`absolute top-2 w-12 h-12 rounded-full border-2 flex items-center justify-center transition-all cursor-pointer shadow-md active:scale-90 ${
+                className={`absolute top-1 sm:top-2 w-11 h-11 sm:w-12 sm:h-12 rounded-full border-2 flex items-center justify-center transition-all cursor-pointer shadow-md active:scale-95 ${
                   activeButtons.TRIANGULO 
-                    ? "bg-green-600 border-green-400 text-white scale-95" 
-                    : "bg-zinc-800 border-zinc-700 text-green-500 hover:bg-zinc-700"
+                    ? "bg-green-600 border-green-400 text-white scale-90 shadow-[0_0_15px_rgba(22,163,74,0.6)]" 
+                    : "bg-zinc-800/90 border-zinc-700 text-green-500 hover:bg-zinc-700"
                 }`}
               >
-                <ParamIcon param="TRIANGULO" size={20} />
+                <ParamIcon param="TRIANGULO" size={18} />
               </button>
 
               {/* CIRCULO (Right) */}
@@ -504,13 +611,13 @@ export const ControlSimulatorModal = ({
                 onMouseLeave={() => activeButtons.CIRCULO && handleButtonRelease("CIRCULO")}
                 onTouchStart={(e) => { e.preventDefault(); handleButtonPress("CIRCULO"); }}
                 onTouchEnd={(e) => { e.preventDefault(); handleButtonRelease("CIRCULO"); }}
-                className={`absolute right-2 w-12 h-12 rounded-full border-2 flex items-center justify-center transition-all cursor-pointer shadow-md active:scale-90 ${
+                className={`absolute right-1 sm:right-2 w-11 h-11 sm:w-12 sm:h-12 rounded-full border-2 flex items-center justify-center transition-all cursor-pointer shadow-md active:scale-95 ${
                   activeButtons.CIRCULO 
-                    ? "bg-red-600 border-red-400 text-white scale-95" 
-                    : "bg-zinc-800 border-zinc-700 text-red-500 hover:bg-zinc-700"
+                    ? "bg-red-600 border-red-400 text-white scale-90 shadow-[0_0_15px_rgba(220,38,38,0.6)]" 
+                    : "bg-zinc-800/90 border-zinc-700 text-red-500 hover:bg-zinc-700"
                 }`}
               >
-                <ParamIcon param="CIRCULO" size={20} />
+                <ParamIcon param="CIRCULO" size={18} />
               </button>
 
               {/* CUADRADO (Left) */}
@@ -521,13 +628,13 @@ export const ControlSimulatorModal = ({
                 onMouseLeave={() => activeButtons.CUADRADO && handleButtonRelease("CUADRADO")}
                 onTouchStart={(e) => { e.preventDefault(); handleButtonPress("CUADRADO"); }}
                 onTouchEnd={(e) => { e.preventDefault(); handleButtonRelease("CUADRADO"); }}
-                className={`absolute left-2 w-12 h-12 rounded-full border-2 flex items-center justify-center transition-all cursor-pointer shadow-md active:scale-90 ${
+                className={`absolute left-1 sm:left-2 w-11 h-11 sm:w-12 sm:h-12 rounded-full border-2 flex items-center justify-center transition-all cursor-pointer shadow-md active:scale-95 ${
                   activeButtons.CUADRADO 
-                    ? "bg-blue-600 border-blue-400 text-white scale-95" 
-                    : "bg-zinc-800 border-zinc-700 text-blue-500 hover:bg-zinc-700"
+                    ? "bg-blue-600 border-blue-400 text-white scale-90 shadow-[0_0_15px_rgba(37,99,235,0.6)]" 
+                    : "bg-zinc-800/90 border-zinc-700 text-blue-500 hover:bg-zinc-700"
                 }`}
               >
-                <ParamIcon param="CUADRADO" size={20} />
+                <ParamIcon param="CUADRADO" size={18} />
               </button>
 
               {/* X (Bottom) */}
@@ -538,24 +645,24 @@ export const ControlSimulatorModal = ({
                 onMouseLeave={() => activeButtons.X && handleButtonRelease("X")}
                 onTouchStart={(e) => { e.preventDefault(); handleButtonPress("X"); }}
                 onTouchEnd={(e) => { e.preventDefault(); handleButtonRelease("X"); }}
-                className={`absolute bottom-2 w-12 h-12 rounded-full border-2 flex items-center justify-center transition-all cursor-pointer shadow-md active:scale-90 ${
+                className={`absolute bottom-1 sm:bottom-2 w-11 h-11 sm:w-12 sm:h-12 rounded-full border-2 flex items-center justify-center transition-all cursor-pointer shadow-md active:scale-95 ${
                   activeButtons.X 
-                    ? "bg-purple-600 border-purple-400 text-white scale-95" 
-                    : "bg-zinc-800 border-zinc-700 text-purple-500 hover:bg-zinc-700"
+                    ? "bg-purple-600 border-purple-400 text-white scale-90 shadow-[0_0_15px_rgba(147,51,234,0.6)]" 
+                    : "bg-zinc-800/90 border-zinc-700 text-purple-500 hover:bg-zinc-700"
                 }`}
               >
-                <ParamIcon param="X" size={20} />
+                <ParamIcon param="X" size={18} />
               </button>
             </div>
           </div>
 
           {/* Active Programming Code list */}
-          <div className="h-44 p-6 flex flex-col overflow-hidden bg-zinc-950/40">
-            <span className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-3">Eventos Programados</span>
-            <div className="flex-1 overflow-y-auto space-y-2 pr-1">
+          <div className="h-28 sm:h-44 p-4 flex flex-col overflow-hidden bg-zinc-950/40 border-t border-zinc-900/60 min-h-0">
+            <span className="text-[10px] sm:text-xs font-bold text-zinc-500 uppercase tracking-widest mb-2">Eventos Programados</span>
+            <div className="flex-1 overflow-y-auto space-y-1.5 pr-1">
               {programmedEvents.length === 0 ? (
-                <div className="h-full flex items-center justify-center text-center p-4 border border-dashed border-zinc-800 rounded-xl bg-zinc-900/10">
-                  <p className="text-xs text-zinc-500 leading-relaxed font-mono">
+                <div className="h-full flex items-center justify-center text-center p-3 border border-dashed border-zinc-800 rounded-xl bg-zinc-900/10">
+                  <p className="text-[9px] sm:text-xs text-zinc-500 leading-relaxed font-mono">
                     No hay bloques de programación activos.<br />
                     Vuelve al lienzo y agrega bloques de eventos para asignarles acciones.
                   </p>
@@ -604,17 +711,17 @@ export const ControlSimulatorModal = ({
                   return (
                     <div
                       key={eventBlock.id}
-                      className="flex items-center gap-3 p-2 bg-zinc-900 border border-zinc-800 rounded-lg text-xs"
+                      className="flex items-center gap-2 sm:gap-3 p-1.5 sm:p-2 bg-zinc-900/80 border border-zinc-800/60 rounded-lg text-xs"
                     >
-                      <div className={`flex items-center justify-center p-1.5 border rounded-lg ${getMotorBadgeColor(eventBlock.param || "")}`}>
+                      <div className={`flex items-center justify-center p-1 sm:p-1.5 border rounded-md sm:rounded-lg ${getMotorBadgeColor(eventBlock.param || "")}`}>
                         {eventBlock.param ? (
-                          <ParamIcon param={eventBlock.param} size={14} />
+                          <ParamIcon param={eventBlock.param} size={12} />
                         ) : (
-                          <span className="text-[9px] font-bold text-zinc-300">ALL</span>
+                          <span className="text-[8px] font-bold text-zinc-300">ALL</span>
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <span className="font-bold text-zinc-300 block text-[10px]">
+                        <span className="font-bold text-zinc-300 block text-[9px] sm:text-[10px] leading-tight">
                           {eventBlock.text.includes("todos")
                             ? "Al soltar todos los botones"
                             : eventBlock.text.includes("soltar")
@@ -623,7 +730,7 @@ export const ControlSimulatorModal = ({
                             ? "Mientras se presiona"
                             : "Al presionar botón"}
                         </span>
-                        <span className="text-zinc-500 font-mono block truncate text-[9px] mt-0.5">
+                        <span className="text-zinc-500 font-mono block truncate text-[8px] sm:text-[9px] mt-0.5">
                           {actionsStr || "Sin acciones programadas"}
                         </span>
                       </div>

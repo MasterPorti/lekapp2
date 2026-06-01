@@ -29,8 +29,14 @@ export const BlockSvg = ({ type, text, color, stroke, childrenCount = 0 }: Block
       height="62"
       viewBox={dimensions.viewBox}
       fill="none"
+      style={{ pointerEvents: "none" }}
     >
-      <path d={dimensions.path} fill={color} stroke={stroke} />
+      <path
+        d={dimensions.path}
+        fill={color}
+        stroke={stroke}
+        style={{ pointerEvents: "auto" }}
+      />
     </svg>
   );
 };

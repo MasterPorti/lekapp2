@@ -119,15 +119,18 @@ button, [role="button"], svg, .select-none {
 
 .selected-block-glow {
   animation: select-pulse 1.8s infinite ease-in-out;
-  z-index: 50 !important;
+  z-index: 100000000 !important;
 }
 
 .block-hover-glow {
   transition: filter 0.2s ease-in-out, transform 0.2s ease-in-out;
 }
 
-.block-hover-glow:hover {
-  filter: drop-shadow(0 0 6px var(--glow-color, #ffffff)) drop-shadow(0 0 12px var(--glow-color, #ffffff));
+@media (hover: hover) {
+  .block-hover-glow:hover {
+    filter: drop-shadow(0 0 6px var(--glow-color, #ffffff)) drop-shadow(0 0 12px var(--glow-color, #ffffff));
+    transform: scale(1.02);
+  }
 }
 
 @keyframes shifting-shadow {

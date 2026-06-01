@@ -107,7 +107,7 @@ export default function LekCodeHubPage() {
     p.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  if (authLoading) {
+  if (authLoading || !isAuthenticated) {
     return (
       <div className="min-h-screen bg-[#f3f4de] flex items-center justify-center font-mono text-xs text-gray-500">
         Cargando LekCode...

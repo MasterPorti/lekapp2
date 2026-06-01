@@ -5,12 +5,14 @@ interface UseCanvasControlsProps {
   placedBlocks: Block[];
   placingBlock: PlacingBlock | null;
   blockPosition: { x: number; y: number };
+  onCanvasClick?: () => void;
 }
 
 export const useCanvasControls = ({
   placedBlocks,
   placingBlock,
   blockPosition,
+  onCanvasClick,
 }: UseCanvasControlsProps) => {
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
@@ -123,17 +125,26 @@ export const useCanvasControls = ({
     const startY = e.clientY;
     const startPanX = pan.x;
     const startPanY = pan.y;
+    let hasMoved = false;
 
     const handleMouseMove = (moveEvent: MouseEvent) => {
+      const dx = moveEvent.clientX - startX;
+      const dy = moveEvent.clientY - startY;
+      if (Math.hypot(dx, dy) > 5) {
+        hasMoved = true;
+      }
       setPan({
-        x: startPanX + (moveEvent.clientX - startX),
-        y: startPanY + (moveEvent.clientY - startY),
+        x: startPanX + dx,
+        y: startPanY + dy,
       });
     };
 
     const handleMouseUp = () => {
       document.removeEventListener("mousemove", handleMouseMove);
       document.removeEventListener("mouseup", handleMouseUp);
+      if (!hasMoved && onCanvasClick) {
+        onCanvasClick();
+      }
     };
 
     document.addEventListener("mousemove", handleMouseMove);
@@ -148,19 +159,28 @@ export const useCanvasControls = ({
     const startY = touch.clientY;
     const startPanX = pan.x;
     const startPanY = pan.y;
+    let hasMoved = false;
 
     const handleTouchMove = (moveEvent: TouchEvent) => {
       if (moveEvent.touches.length !== 1) return;
       const moveTouch = moveEvent.touches[0];
+      const dx = moveTouch.clientX - startX;
+      const dy = moveTouch.clientY - startY;
+      if (Math.hypot(dx, dy) > 5) {
+        hasMoved = true;
+      }
       setPan({
-        x: startPanX + (moveTouch.clientX - startX),
-        y: startPanY + (moveTouch.clientY - startY),
+        x: startPanX + dx,
+        y: startPanY + dy,
       });
     };
 
     const handleTouchEnd = () => {
       document.removeEventListener("touchmove", handleTouchMove);
       document.removeEventListener("touchend", handleTouchEnd);
+      if (!hasMoved && onCanvasClick) {
+        onCanvasClick();
+      }
     };
 
     document.addEventListener("touchmove", handleTouchMove, { passive: false });

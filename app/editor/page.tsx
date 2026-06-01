@@ -17,6 +17,7 @@ export default function EditorPage() {
   const [activeButton, setActiveButton] = useState<string>("programacion");
   const [activeCategory, setActiveCategory] = useState<string>("eventos");
   const [showDesktopWarning, setShowDesktopWarning] = useState(false);
+  const [isMobileDevice, setIsMobileDevice] = useState(false);
 
   const canvasRef = useRef<HTMLDivElement>(null);
 
@@ -35,8 +36,8 @@ export default function EditorPage() {
     blockPosition,
     rawBlockPosition,
     setBlockPosition,
-    editingBlockIndex,
-    setEditingBlockIndex,
+    editingBlockId,
+    setEditingBlockId,
     paramSelector,
     setParamSelector,
     numberInput,
@@ -74,15 +75,11 @@ export default function EditorPage() {
     placedBlocks,
     placingBlock,
     blockPosition,
+    onCanvasClick: handleCancelEdit,
   });
 
-  if (authLoading) {
-    return (
-      <div className="min-h-screen bg-[#f3f4de] flex items-center justify-center font-mono text-xs text-gray-500">
-        Cargando editor LekCode...
-      </div>
-    );
-  }
+  const [showDebugPanel, setShowDebugPanel] = useState(false);
+  const [isCopied, setIsCopied] = useState(false);
 
   // Proyectos / Files logic
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
@@ -129,6 +126,10 @@ export default function EditorPage() {
 
   // Initial load
   useEffect(() => {
+    const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    setIsMobileDevice(isMobileUA);
+
+    if (!isAuthenticated) return;
     const init = async () => {
       try {
         const res = await fetch("/api/projects");
@@ -179,7 +180,6 @@ export default function EditorPage() {
     init();
 
     // Check if the user is on a desktop computer
-    const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     const hasTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
     const isCpu = !isMobileUA && !hasTouch;
 
@@ -187,11 +187,11 @@ export default function EditorPage() {
     if (isCpu && !dismissed) {
       setShowDesktopWarning(true);
     }
-  }, []);
+  }, [isAuthenticated]);
 
   // Auto-save effect
   useEffect(() => {
-    if (!activeProjectId || !activeProjectName) return;
+    if (!isAuthenticated || !activeProjectId || !activeProjectName) return;
     
     // Only save if it has been saved before OR if we have blocks!
     if (!isSavedInDb && placedBlocks.length === 0) return;
@@ -213,16 +213,25 @@ export default function EditorPage() {
     }, 500);
 
     return () => clearTimeout(timer);
-  }, [placedBlocks, activeProjectId, activeProjectName, isSavedInDb]);
+  }, [placedBlocks, activeProjectId, activeProjectName, isSavedInDb, isAuthenticated]);
 
   useEffect(() => {
+    if (!isAuthenticated) return;
     document.documentElement.classList.add("canvas-page-lock");
     document.body.classList.add("canvas-page-lock");
     return () => {
       document.documentElement.classList.remove("canvas-page-lock");
       document.body.classList.remove("canvas-page-lock");
     };
-  }, []);
+  }, [isAuthenticated]);
+
+  if (authLoading || !isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-[#f3f4de] flex items-center justify-center font-mono text-xs text-gray-500">
+        Cargando editor LekCode...
+      </div>
+    );
+  }
 
   const handleBlockClick = (
     type: string,
@@ -238,7 +247,7 @@ export default function EditorPage() {
   };
 
   const handleBloquesClick = () => {
-    setEditingBlockIndex(null);
+    setEditingBlockId(null);
     setPlacingBlock(null);
     setParamSelector(null);
     setActiveButton("bloques");
@@ -266,13 +275,13 @@ export default function EditorPage() {
   };
 
   const handlePlacedBlockParamClick = (
-    index: number,
+    id: string,
     type: "icon" | "number" | "motor-icon" | "motor-percent",
     color?: "blue" | "orange"
   ) => {
-    setParamSelector({ target: index, type, color });
+    setParamSelector({ target: id, type, color });
     if (type === "number" || type === "motor-percent") {
-      const block = placedBlocks[index];
+      const block = placedBlocks.find(b => b.id === id);
       if (block?.param) {
         const value = type === "motor-percent"
           ? block.param.split(":")[1] || "100"
@@ -312,6 +321,7 @@ export default function EditorPage() {
           activeCategory={activeCategory}
           onCategoryChange={setActiveCategory}
           onBlockClick={handleBlockClick}
+          onClose={handleProgramacionClick}
         />
       )}
 
@@ -326,17 +336,32 @@ export default function EditorPage() {
         onTouchEnd={handlePinchEnd}
       >
         {/* Botones de Acción Superiores */}
-        <div className="absolute top-4 left-4 right-4 z-40 flex items-center justify-between pointer-events-none">
-          <button
-            type="button"
-            className="w-10 h-10 bg-zinc-800/80 border border-zinc-700/50 backdrop-blur-md rounded-full flex items-center justify-center text-zinc-300 hover:bg-zinc-700 hover:text-white active:scale-95 transition-all pointer-events-auto shadow-lg cursor-pointer flex-none"
-            onClick={() => router.push("/")}
-            title="Atrás"
-          >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-            </svg>
-          </button>
+        <div 
+          className="absolute top-4 left-4 right-4 z-40 flex items-center justify-between pointer-events-none"
+          onMouseDown={(e) => e.stopPropagation()}
+          onTouchStart={(e) => e.stopPropagation()}
+        >
+          <div className="flex items-center gap-2 pointer-events-auto flex-none">
+            <button
+              type="button"
+              className="w-10 h-10 bg-zinc-800/80 border border-zinc-700/50 backdrop-blur-md rounded-full flex items-center justify-center text-zinc-300 hover:bg-zinc-700 hover:text-white active:scale-95 transition-all shadow-lg cursor-pointer flex-none"
+              onClick={() => router.push("/")}
+              title="Atrás"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setShowDebugPanel(true)}
+              className="w-10 h-10 bg-zinc-800/80 border border-zinc-700/50 backdrop-blur-md rounded-full flex items-center justify-center text-lg hover:bg-zinc-700 hover:text-white active:scale-95 transition-all shadow-lg cursor-pointer flex-none select-none"
+              title="Panel de depuración"
+            >
+              🐛
+            </button>
+          </div>
 
           {/* Centered Tinkercad-style Project Name */}
           <div className="flex-1 flex justify-center px-4 max-w-[calc(100%-120px)] pointer-events-auto">
@@ -394,8 +419,8 @@ export default function EditorPage() {
 
           {placedBlocks.map((block, index) => {
             const isBeingEdited =
-              editingBlockIndex !== null &&
-              getConnectedBlocksBelow(editingBlockIndex).includes(index);
+              editingBlockId !== null &&
+              getConnectedBlocksBelow(editingBlockId).includes(block.id);
             return (
               <PlacedBlock
                 key={block.id}
@@ -427,7 +452,7 @@ export default function EditorPage() {
           onZoomOut={handleZoomOut}
           onNextBlock={handleNextBlock}
           showNextBlockButton={hasEventoBlocks}
-          showTrash={editingBlockIndex !== null}
+          showTrash={editingBlockId !== null}
           onTrashClick={handleDeleteBlock}
         />
 
@@ -462,14 +487,14 @@ export default function EditorPage() {
         />
       )}
 
-      {editingBlockIndex !== null && !paramSelector && (
+      {editingBlockId !== null && !paramSelector && (
         <ActionButtons
           onCancel={handleCancelEdit}
           onConfirm={handleConfirmEdit}
         />
       )}
 
-      {undoState && !editingBlockIndex && !placingBlock && (
+      {undoState && !editingBlockId && !placingBlock && (
         <UndoButton
           timeLeft={undoState.timeLeft}
           totalTime={4000}
@@ -558,27 +583,94 @@ export default function EditorPage() {
       )}
 
       {/* Mobile orientation landscape blocker overlay */}
-      <div className="fixed inset-0 z-[200] bg-zinc-950 text-white flex flex-col items-center justify-center p-6 text-center select-none lg:hidden portrait:hidden landscape:flex">
-        <div className="flex flex-col items-center gap-6 max-w-sm">
-          {/* Rotating Phone SVG Icon in industrial red/black aesthetic */}
-          <div className="w-20 h-20 flex items-center justify-center text-red-500 bg-red-950/20 border border-red-900/30 rounded-full shadow-lg shadow-red-900/10 relative">
-            <svg className="w-12 h-12 text-red-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="5" y="2" width="14" height="20" rx="2" className="origin-center animate-[spin_3s_ease-in-out_infinite]" />
-              <path d="M21 12a9 9 0 0 1-9 9" />
-              <path d="M21 12v-4h-4" />
-            </svg>
-            <div className="absolute inset-0 border border-red-500 rounded-full animate-ping opacity-10 pointer-events-none" />
+      {isMobileDevice && (
+        <div className="fixed inset-0 z-[200] bg-zinc-950 text-white flex flex-col items-center justify-center p-6 text-center select-none lg:hidden portrait:hidden landscape:flex">
+          <div className="flex flex-col items-center gap-6 max-w-sm">
+            {/* Rotating Phone SVG Icon in industrial red/black aesthetic */}
+            <div className="w-20 h-20 flex items-center justify-center text-red-500 bg-red-950/20 border border-red-900/30 rounded-full shadow-lg shadow-red-900/10 relative">
+              <svg className="w-12 h-12 text-red-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="5" y="2" width="14" height="20" rx="2" className="origin-center animate-[spin_3s_ease-in-out_infinite]" />
+                <path d="M21 12a9 9 0 0 1-9 9" />
+                <path d="M21 12v-4h-4" />
+              </svg>
+              <div className="absolute inset-0 border border-red-500 rounded-full animate-ping opacity-10 pointer-events-none" />
+            </div>
+            
+            <h2 className="text-red-500 font-mono font-bold text-lg tracking-widest uppercase">
+              Gira tu dispositivo
+            </h2>
+            
+            <p className="text-zinc-400 font-sans text-xs sm:text-sm leading-relaxed">
+              LekCode está optimizado exclusivamente para su uso en modo vertical. Por favor, voltea tu teléfono.
+            </p>
           </div>
-          
-          <h2 className="text-red-500 font-mono font-bold text-lg tracking-widest uppercase">
-            Gira tu dispositivo
-          </h2>
-          
-          <p className="text-zinc-400 font-sans text-xs sm:text-sm leading-relaxed">
-            LekCode está optimizado exclusivamente para su uso en modo vertical. Por favor, voltea tu teléfono.
-          </p>
         </div>
-      </div>
+      )}
+
+      {/* Modal del panel de depuración */}
+      {showDebugPanel && (
+        <div className="fixed inset-0 z-[250] flex items-center justify-center p-4">
+          <div 
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity" 
+            onClick={() => setShowDebugPanel(false)} 
+          />
+          <div className="relative bg-zinc-900 border border-zinc-800 rounded-2xl p-6 max-w-lg w-full shadow-2xl flex flex-col gap-4 animate-in fade-in zoom-in duration-200">
+            <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
+              <h3 className="text-white font-mono font-bold text-base flex items-center gap-2">
+                <span>Panel de Depuración 🐛</span>
+                <span className="text-[10px] px-1.5 py-0.5 bg-yellow-500/10 text-yellow-500 rounded border border-yellow-500/20 font-normal">DEV</span>
+              </h3>
+              <button
+                type="button"
+                onClick={() => setShowDebugPanel(false)}
+                className="text-zinc-400 hover:text-white font-mono text-xs cursor-pointer select-none"
+              >
+                ✕ Cerrar
+              </button>
+            </div>
+
+            <div className="flex flex-col gap-2 font-mono text-xs">
+              <div className="flex justify-between py-1 border-b border-zinc-800/40">
+                <span className="text-zinc-500">editingBlockId:</span>
+                <span className="text-yellow-500 font-bold">{editingBlockId || "null"}</span>
+              </div>
+              <div className="flex justify-between py-1 border-b border-zinc-800/40">
+                <span className="text-zinc-500">placingBlock (Colocando):</span>
+                <span className={placingBlock ? "text-green-500 font-bold" : "text-zinc-400"}>
+                  {placingBlock ? "true" : "false"}
+                </span>
+              </div>
+              <div className="flex justify-between py-1 border-b border-zinc-800/40">
+                <span className="text-zinc-500">Total Placed Blocks:</span>
+                <span className="text-white font-bold">{placedBlocks.length}</span>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-zinc-400 font-mono text-xs">Estado JSON de los bloques:</label>
+              <textarea
+                readOnly
+                value={JSON.stringify(placedBlocks, null, 2)}
+                onClick={(e) => (e.target as HTMLTextAreaElement).select()}
+                className="w-full h-48 bg-zinc-950 border border-zinc-800 rounded-lg p-3 font-mono text-[10px] text-zinc-300 focus:outline-none resize-none overflow-y-auto"
+              />
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                navigator.clipboard.writeText(JSON.stringify(placedBlocks, null, 2));
+                setIsCopied(true);
+                setTimeout(() => setIsCopied(false), 2000);
+              }}
+              className="w-full py-2.5 bg-yellow-500 hover:bg-yellow-400 active:scale-[0.98] text-black font-mono font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer shadow-lg shadow-yellow-500/20 flex items-center justify-center gap-2"
+            >
+              {isCopied ? "¡Copiado al Portapapeles! 🎉" : "Copiar Estado JSON"}
+            </button>
+          </div>
+        </div>
+      )}
+
       {needsActivation && <UnlockOverlay onUnlocked={() => window.location.reload()} />}
     </div>
   );

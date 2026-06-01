@@ -13,11 +13,11 @@ interface PlacedBlockProps {
   index: number;
   isBeingEdited: boolean;
   zoom: number;
-  onLongPressStart: (index: number) => void;
+  onLongPressStart: (id: string) => void;
   onLongPressEnd: () => void;
-  onEditMove: (index: number, newX: number, newY: number) => void;
+  onEditMove: (id: string, newX: number, newY: number) => void;
   onParamClick: (
-    index: number,
+    id: string,
     type: "icon" | "number" | "motor-icon" | "motor-percent",
     color?: "blue" | "orange"
   ) => void;
@@ -34,9 +34,9 @@ export const PlacedBlock = ({
   onParamClick,
 }: PlacedBlockProps) => {
   const handleMouseDown = (e: React.MouseEvent) => {
+    e.stopPropagation();
     if (isBeingEdited) {
       e.preventDefault();
-      e.stopPropagation();
       const startX = e.clientX;
       const startY = e.clientY;
       const startPosX = block.x;
@@ -44,7 +44,7 @@ export const PlacedBlock = ({
 
       const handleMouseMove = (moveEvent: MouseEvent) => {
         onEditMove(
-          index,
+          block.id,
           startPosX + (moveEvent.clientX - startX) / zoom,
           startPosY + (moveEvent.clientY - startY) / zoom
         );
@@ -58,13 +58,13 @@ export const PlacedBlock = ({
       document.addEventListener("mousemove", handleMouseMove);
       document.addEventListener("mouseup", handleMouseUp);
     } else {
-      onLongPressStart(index);
+      onLongPressStart(block.id);
     }
   };
 
   const handleTouchStart = (e: React.TouchEvent) => {
+    e.stopPropagation();
     if (isBeingEdited) {
-      e.stopPropagation();
       const touch = e.touches[0];
       const startX = touch.clientX;
       const startY = touch.clientY;
@@ -75,7 +75,7 @@ export const PlacedBlock = ({
         if (moveEvent.touches.length === 1) {
           const moveTouch = moveEvent.touches[0];
           onEditMove(
-            index,
+            block.id,
             startPosX + (moveTouch.clientX - startX) / zoom,
             startPosY + (moveTouch.clientY - startY) / zoom
           );
@@ -90,7 +90,7 @@ export const PlacedBlock = ({
       document.addEventListener("touchmove", handleTouchMove);
       document.addEventListener("touchend", handleTouchEnd);
     } else {
-      onLongPressStart(index);
+      onLongPressStart(block.id);
     }
   };
 
@@ -104,6 +104,10 @@ export const PlacedBlock = ({
         top: `calc(50% + ${block.y}px)`,
         transform: "translateY(-50%)",
         "--glow-color": block.color,
+        zIndex: isBeingEdited
+          ? 100000000
+          : 1000 + Math.round(block.y / 10) + (block.lastMovedAt || 0) * 100,
+        pointerEvents: "none",
       } as React.CSSProperties}
       onMouseDown={handleMouseDown}
       onMouseUp={onLongPressEnd}
@@ -111,9 +115,12 @@ export const PlacedBlock = ({
       onTouchStart={handleTouchStart}
       onTouchEnd={onLongPressEnd}
     >
-      <div className={`relative ${
-        !isBeingEdited ? "cursor-pointer active:scale-[0.99]" : ""
-      }`}>
+      <div 
+        className={`relative ${
+          !isBeingEdited ? "cursor-pointer active:scale-[0.99]" : ""
+        }`}
+        style={{ pointerEvents: "none" }}
+      >
         <BlockSvg
           type={block.type}
           text={block.text}
@@ -121,14 +128,16 @@ export const PlacedBlock = ({
           stroke={block.stroke}
           childrenCount={block.childrenCount || 0}
         />
-        <BlockContent
-          type={block.type}
-          text={block.text}
-          param={block.param}
-          onParamClick={(paramType, color) =>
-            onParamClick(index, paramType, color)
-          }
-        />
+        <div style={{ pointerEvents: "auto" }}>
+          <BlockContent
+            type={block.type}
+            text={block.text}
+            param={block.param}
+            onParamClick={(paramType, color) =>
+              onParamClick(block.id, paramType, color)
+            }
+          />
+        </div>
       </div>
     </div>
   );

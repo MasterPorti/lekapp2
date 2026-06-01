@@ -189,9 +189,9 @@ export const CShapedBlockSvg = ({
       height={svgHeight * scale}
       viewBox={`0 0 ${width} ${svgHeight}`}
       fill="none"
-      style={{ display: "block" }}
+      style={{ display: "block", pointerEvents: "none" }}
     >
-      <path d={path} fill={color} stroke={stroke} />
+      <path d={path} fill={color} stroke={stroke} style={{ pointerEvents: "auto" }} />
     </svg>
   );
 };

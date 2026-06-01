@@ -159,9 +159,7 @@ export const useBlockManagement = () => {
   const [placedBlocks, setPlacedBlocks] = useState<Block[]>([]);
   const [placingBlock, setPlacingBlock] = useState<PlacingBlock | null>(null);
   const [blockPosition, setBlockPosition] = useState({ x: 0, y: 0 });
-  const [editingBlockIndex, setEditingBlockIndex] = useState<number | null>(
-    null
-  );
+  const [editingBlockId, setEditingBlockId] = useState<string | null>(null);
   const [paramSelector, setParamSelector] = useState<ParamSelectorState | null>(
     null
   );
@@ -175,6 +173,7 @@ export const useBlockManagement = () => {
 
   const longPressTimer = useRef<NodeJS.Timeout | null>(null);
   const undoTimer = useRef<NodeJS.Timeout | null>(null);
+  const nextZIndexOrder = useRef(1);
 
   useEffect(() => {
     if (undoState && undoState.timeLeft > 0) {
@@ -205,17 +204,16 @@ export const useBlockManagement = () => {
     type === "movimiento" || type === "control" || type === "control-loop";
 
   const getConnectedBlocksBelow = useCallback(
-    (startIndex: number): number[] => {
-      const connected: number[] = [startIndex];
-      const block = placedBlocks[startIndex];
+    (startId: string): string[] => {
+      const connected: string[] = [startId];
+      const block = placedBlocks.find(x => x.id === startId);
       if (!block) return connected;
 
       const addChain = (blockId: string) => {
         const b = placedBlocks.find(x => x.id === blockId);
         if (!b) return;
-        const idx = placedBlocks.findIndex(x => x.id === blockId);
-        if (idx !== -1 && !connected.includes(idx)) {
-          connected.push(idx);
+        if (!connected.includes(blockId)) {
+          connected.push(blockId);
         }
         if (b.childBlockId) {
           addChain(b.childBlockId);
@@ -242,7 +240,7 @@ export const useBlockManagement = () => {
       currentX: number,
       currentY: number,
       currentType: string,
-      excludeIndices: number[] = [],
+      excludeIds: string[] = [],
       currentChildrenCount: number = 0,
       currentText: string = ""
     ) => {
@@ -253,7 +251,7 @@ export const useBlockManagement = () => {
       let targetBlockId: string | null = null;
       let snapConnectionMode: "next" | "child" | "prev" | null = null;
 
-      const excludeSet = new Set(excludeIndices);
+      const excludeSet = new Set(excludeIds);
 
       const currentHeight = currentType === "control-loop"
         ? getLoopTotalHeight(currentChildrenCount)
@@ -262,8 +260,8 @@ export const useBlockManagement = () => {
       const currentBottomOffset = getBlockBottomOffset(currentType, currentHeight);
 
       for (let i = 0; i < placedBlocks.length; i++) {
-        if (excludeSet.has(i)) continue;
         const other = placedBlocks[i];
+        if (excludeSet.has(other.id)) continue;
 
         let otherHeight = 27;
         if (other.type === "control-loop") {
@@ -349,14 +347,23 @@ export const useBlockManagement = () => {
   );
 
   const avoidOverlap = useCallback(
-    (x: number, y: number, type: string, text?: string): { x: number; y: number } => {
+    (
+      x: number,
+      y: number,
+      type: string,
+      text?: string,
+      excludeIds: string[] = []
+    ): { x: number; y: number } => {
       let newX = x;
       let newY = y;
       let attempts = 0;
       const OVERLAP_THRESHOLD = 35;
+      const excludeSet = new Set(excludeIds);
 
       while (attempts < 10) {
         const overlapping = placedBlocks.find((block) => {
+          if (excludeSet.has(block.id)) return false;
+
           const dx = Math.abs(block.x - newX);
           const dy = Math.abs(block.y - newY);
           if (dx > OVERLAP_THRESHOLD || dy > OVERLAP_THRESHOLD) return false;
@@ -396,9 +403,9 @@ export const useBlockManagement = () => {
     }
   };
 
-  const handleBlockLongPressStart = (index: number) => {
+  const handleBlockLongPressStart = (blockId: string) => {
     longPressTimer.current = setTimeout(() => {
-      const block = placedBlocks[index];
+      const block = placedBlocks.find(b => b.id === blockId);
       setPreEditBlocks([...placedBlocks]);
       let newBlocks = [...placedBlocks];
       if (block && block.parentId) {
@@ -416,7 +423,7 @@ export const useBlockManagement = () => {
         });
       }
       setPlacedBlocks(resolveBlockLayouts(newBlocks));
-      setEditingBlockIndex(index);
+      setEditingBlockId(blockId);
     }, 500);
   };
 
@@ -428,12 +435,13 @@ export const useBlockManagement = () => {
   };
 
   const handleDeleteBlock = () => {
-    if (editingBlockIndex !== null) {
+    if (editingBlockId !== null) {
       saveForUndo();
-      const block = placedBlocks[editingBlockIndex];
-      const toDelete = new Set(getConnectedBlocksBelow(editingBlockIndex));
+      const block = placedBlocks.find(b => b.id === editingBlockId);
+      if (!block) return;
+      const toDelete = new Set(getConnectedBlocksBelow(editingBlockId));
       
-      let newBlocks = placedBlocks.filter((_, i) => !toDelete.has(i));
+      let newBlocks = placedBlocks.filter((b) => !toDelete.has(b.id));
       if (block.parentId) {
         newBlocks = newBlocks.map(b => {
           if (b.id === block.parentId) {
@@ -447,7 +455,7 @@ export const useBlockManagement = () => {
       }
       
       setPlacedBlocks(resolveBlockLayouts(newBlocks));
-      setEditingBlockIndex(null);
+      setEditingBlockId(null);
       setPreEditBlocks(null);
     }
   };
@@ -457,19 +465,20 @@ export const useBlockManagement = () => {
       setPlacedBlocks(resolveBlockLayouts(preEditBlocks));
       setPreEditBlocks(null);
     }
-    setEditingBlockIndex(null);
+    setEditingBlockId(null);
   };
 
   const handleConfirmEdit = () => {
-    if (editingBlockIndex !== null) {
-      const block = placedBlocks[editingBlockIndex];
-      const connectedIndices = getConnectedBlocksBelow(editingBlockIndex);
+    if (editingBlockId !== null) {
+      const block = placedBlocks.find(b => b.id === editingBlockId);
+      if (!block) return;
+      const connectedIds = getConnectedBlocksBelow(editingBlockId);
       
       const snapped = findSnapPosition(
         block.x,
         block.y,
         block.type,
-        connectedIndices,
+        connectedIds,
         block.childrenCount || 0,
         block.text
       );
@@ -549,10 +558,41 @@ export const useBlockManagement = () => {
             });
           }
         }
+      } else {
+        const final = avoidOverlap(
+          block.x,
+          block.y,
+          block.type,
+          block.text,
+          connectedIds
+        );
+        const deltaX = final.x - block.x;
+        const deltaY = final.y - block.y;
+        
+        const connectedIdsSet = new Set(connectedIds);
+        newBlocks = newBlocks.map(b => {
+          if (connectedIdsSet.has(b.id)) {
+            return {
+              ...b,
+              x: b.x + deltaX,
+              y: b.y + deltaY,
+            };
+          }
+          return b;
+        });
       }
+
+      const order = nextZIndexOrder.current++;
+      const connectedIdsSet = new Set(connectedIds);
+      newBlocks = newBlocks.map(b => {
+        if (connectedIdsSet.has(b.id)) {
+          return { ...b, lastMovedAt: order };
+        }
+        return b;
+      });
       
       setPlacedBlocks(resolveBlockLayouts(newBlocks));
-      setEditingBlockIndex(null);
+      setEditingBlockId(null);
       setPreEditBlocks(null);
       triggerHapticFeedback();
     }
@@ -641,43 +681,70 @@ export const useBlockManagement = () => {
     }
 
     // Case 2: We are dragging/editing an existing block tree
-    if (editingBlockIndex !== null) {
-      const mainBlock = placedBlocks[editingBlockIndex];
-      const connectedIndices = getConnectedBlocksBelow(editingBlockIndex);
+    if (editingBlockId !== null) {
+      const mainBlock = placedBlocks.find(b => b.id === editingBlockId);
+      if (mainBlock) {
+        const connectedIds = getConnectedBlocksBelow(editingBlockId);
 
-      const snapped = findSnapPosition(
-        mainBlock.x,
-        mainBlock.y,
-        mainBlock.type,
-        connectedIndices,
-        mainBlock.childrenCount || 0,
-        mainBlock.text
-      );
+        const snapped = findSnapPosition(
+          mainBlock.x,
+          mainBlock.y,
+          mainBlock.type,
+          connectedIds,
+          mainBlock.childrenCount || 0,
+          mainBlock.text
+        );
 
-      if (snapped.snapped && snapped.targetBlockId && snapped.snapConnectionMode) {
-        const targetId = snapped.targetBlockId;
-        const mode = snapped.snapConnectionMode;
-        const mainBlockId = mainBlock.id;
+        if (snapped.snapped && snapped.targetBlockId && snapped.snapConnectionMode) {
+          const targetId = snapped.targetBlockId;
+          const mode = snapped.snapConnectionMode;
+          const mainBlockId = mainBlock.id;
 
-        const mainBlockIndex = tempBlocks.findIndex(b => b.id === mainBlockId);
-        if (mainBlockIndex !== -1) {
-          if (mode === "next" || mode === "child") {
-            tempBlocks[mainBlockIndex] = { ...tempBlocks[mainBlockIndex], parentId: targetId };
+          const mainBlockIndex = tempBlocks.findIndex(b => b.id === mainBlockId);
+          if (mainBlockIndex !== -1) {
+            if (mode === "next" || mode === "child") {
+              tempBlocks[mainBlockIndex] = { ...tempBlocks[mainBlockIndex], parentId: targetId };
 
-            const targetIndex = tempBlocks.findIndex(b => b.id === targetId);
-            if (targetIndex !== -1) {
-              const targetBlock = tempBlocks[targetIndex];
-              let displacedId: string | undefined = undefined;
-              if (mode === "next") {
-                displacedId = targetBlock.nextBlockId;
-                tempBlocks[targetIndex] = { ...targetBlock, nextBlockId: mainBlockId };
-              } else {
-                displacedId = targetBlock.childBlockId;
-                tempBlocks[targetIndex] = { ...targetBlock, childBlockId: mainBlockId };
+              const targetIndex = tempBlocks.findIndex(b => b.id === targetId);
+              if (targetIndex !== -1) {
+                const targetBlock = tempBlocks[targetIndex];
+                let displacedId: string | undefined = undefined;
+                if (mode === "next") {
+                  displacedId = targetBlock.nextBlockId;
+                  tempBlocks[targetIndex] = { ...targetBlock, nextBlockId: mainBlockId };
+                } else {
+                  displacedId = targetBlock.childBlockId;
+                  tempBlocks[targetIndex] = { ...targetBlock, childBlockId: mainBlockId };
+                }
+
+                if (displacedId && displacedId !== mainBlockId) {
+                  // Find end of dragged chain
+                  let chainEndId = mainBlockId;
+                  while (true) {
+                    const current = tempBlocks.find(b => b.id === chainEndId);
+                    if (current && current.nextBlockId) {
+                      chainEndId = current.nextBlockId;
+                    } else {
+                      break;
+                    }
+                  }
+                  const chainEndIndex = tempBlocks.findIndex(b => b.id === chainEndId);
+                  if (chainEndIndex !== -1) {
+                    tempBlocks[chainEndIndex] = { ...tempBlocks[chainEndIndex], nextBlockId: displacedId };
+                  }
+                  const displacedIndex = tempBlocks.findIndex(b => b.id === displacedId);
+                  if (displacedIndex !== -1) {
+                    tempBlocks[displacedIndex] = { ...tempBlocks[displacedIndex], parentId: chainEndId };
+                  }
+                }
               }
+            } else if (mode === "prev") {
+              const targetIndex = tempBlocks.findIndex(b => b.id === targetId);
+              if (targetIndex !== -1) {
+                const targetBlock = tempBlocks[targetIndex];
+                const oldParentId = targetBlock.parentId;
+                const wasChildOfParent = oldParentId && (tempBlocks.find(b => b.id === oldParentId)?.childBlockId === targetId);
 
-              if (displacedId && displacedId !== mainBlockId) {
-                // Find end of dragged chain
                 let chainEndId = mainBlockId;
                 while (true) {
                   const current = tempBlocks.find(b => b.id === chainEndId);
@@ -687,47 +754,22 @@ export const useBlockManagement = () => {
                     break;
                   }
                 }
+
                 const chainEndIndex = tempBlocks.findIndex(b => b.id === chainEndId);
                 if (chainEndIndex !== -1) {
-                  tempBlocks[chainEndIndex] = { ...tempBlocks[chainEndIndex], nextBlockId: displacedId };
+                  tempBlocks[chainEndIndex] = { ...tempBlocks[chainEndIndex], nextBlockId: targetId };
                 }
-                const displacedIndex = tempBlocks.findIndex(b => b.id === displacedId);
-                if (displacedIndex !== -1) {
-                  tempBlocks[displacedIndex] = { ...tempBlocks[displacedIndex], parentId: chainEndId };
-                }
-              }
-            }
-          } else if (mode === "prev") {
-            const targetIndex = tempBlocks.findIndex(b => b.id === targetId);
-            if (targetIndex !== -1) {
-              const targetBlock = tempBlocks[targetIndex];
-              const oldParentId = targetBlock.parentId;
-              const wasChildOfParent = oldParentId && (tempBlocks.find(b => b.id === oldParentId)?.childBlockId === targetId);
+                tempBlocks[targetIndex] = { ...targetBlock, parentId: chainEndId };
 
-              let chainEndId = mainBlockId;
-              while (true) {
-                const current = tempBlocks.find(b => b.id === chainEndId);
-                if (current && current.nextBlockId) {
-                  chainEndId = current.nextBlockId;
-                } else {
-                  break;
-                }
-              }
-
-              const chainEndIndex = tempBlocks.findIndex(b => b.id === chainEndId);
-              if (chainEndIndex !== -1) {
-                tempBlocks[chainEndIndex] = { ...tempBlocks[chainEndIndex], nextBlockId: targetId };
-              }
-              tempBlocks[targetIndex] = { ...targetBlock, parentId: chainEndId };
-
-              if (oldParentId && oldParentId !== mainBlockId) {
-                tempBlocks[mainBlockIndex] = { ...tempBlocks[mainBlockIndex], parentId: oldParentId };
-                const parentIndex = tempBlocks.findIndex(b => b.id === oldParentId);
-                if (parentIndex !== -1) {
-                  if (wasChildOfParent) {
-                    tempBlocks[parentIndex] = { ...tempBlocks[parentIndex], childBlockId: mainBlockId };
-                  } else {
-                    tempBlocks[parentIndex] = { ...tempBlocks[parentIndex], nextBlockId: mainBlockId };
+                if (oldParentId && oldParentId !== mainBlockId) {
+                  tempBlocks[mainBlockIndex] = { ...tempBlocks[mainBlockIndex], parentId: oldParentId };
+                  const parentIndex = tempBlocks.findIndex(b => b.id === oldParentId);
+                  if (parentIndex !== -1) {
+                    if (wasChildOfParent) {
+                      tempBlocks[parentIndex] = { ...tempBlocks[parentIndex], childBlockId: mainBlockId };
+                    } else {
+                      tempBlocks[parentIndex] = { ...tempBlocks[parentIndex], nextBlockId: mainBlockId };
+                    }
                   }
                 }
               }
@@ -751,19 +793,20 @@ export const useBlockManagement = () => {
       displayBlocks: resolved.filter(b => b.id !== "temp-placing-id"),
       displayBlockPosition: resolvedPlacingPos,
     };
-  }, [placedBlocks, placingBlock, blockPosition, editingBlockIndex, findSnapPosition]);
+  }, [placedBlocks, placingBlock, blockPosition, editingBlockId, findSnapPosition]);
 
   const handleEditBlockMove = (
-    draggedIndex: number,
+    draggedId: string,
     newX: number,
     newY: number
   ) => {
-    if (editingBlockIndex === null) return;
+    if (editingBlockId === null) return;
 
-    const mainBlock = placedBlocks[editingBlockIndex];
-    const draggedBlock = placedBlocks[draggedIndex];
+    const mainBlock = placedBlocks.find(b => b.id === editingBlockId);
+    const draggedBlock = placedBlocks.find(b => b.id === draggedId);
+    if (!mainBlock || !draggedBlock) return;
 
-    const displayBlock = displayBlocks.find((b) => b.id === draggedBlock.id);
+    const displayBlock = displayBlocks.find((b) => b.id === draggedId);
     const shiftX = displayBlock ? displayBlock.x - draggedBlock.x : 0;
     const shiftY = displayBlock ? displayBlock.y - draggedBlock.y : 0;
 
@@ -772,34 +815,43 @@ export const useBlockManagement = () => {
 
     const deltaX = correctedNewX - draggedBlock.x;
     const deltaY = correctedNewY - draggedBlock.y;
-    const connectedIndices = getConnectedBlocksBelow(editingBlockIndex);
+    const connectedIds = getConnectedBlocksBelow(editingBlockId);
+    const connectedIdsSet = new Set(connectedIds);
 
-    let newBlocks = [...placedBlocks];
-    for (const i of connectedIndices) {
-      newBlocks[i] = {
-        ...newBlocks[i],
-        x: newBlocks[i].x + deltaX,
-        y: newBlocks[i].y + deltaY,
-      };
-    }
-
-    const snapped = findSnapPosition(
-      newBlocks[editingBlockIndex].x,
-      newBlocks[editingBlockIndex].y,
-      mainBlock.type,
-      connectedIndices,
-      mainBlock.childrenCount || 0,
-      mainBlock.text
-    );
-    if (snapped.snapped) {
-      const snapDeltaX = snapped.x - newBlocks[editingBlockIndex].x;
-      const snapDeltaY = snapped.y - newBlocks[editingBlockIndex].y;
-      for (const i of connectedIndices) {
-        newBlocks[i] = {
-          ...newBlocks[i],
-          x: newBlocks[i].x + snapDeltaX,
-          y: newBlocks[i].y + snapDeltaY,
+    let newBlocks = placedBlocks.map(b => {
+      if (connectedIdsSet.has(b.id)) {
+        return {
+          ...b,
+          x: b.x + deltaX,
+          y: b.y + deltaY,
         };
+      }
+      return b;
+    });
+
+    const updatedMainBlock = newBlocks.find(b => b.id === editingBlockId);
+    if (updatedMainBlock) {
+      const snapped = findSnapPosition(
+        updatedMainBlock.x,
+        updatedMainBlock.y,
+        mainBlock.type,
+        connectedIds,
+        mainBlock.childrenCount || 0,
+        mainBlock.text
+      );
+      if (snapped.snapped) {
+        const snapDeltaX = snapped.x - updatedMainBlock.x;
+        const snapDeltaY = snapped.y - updatedMainBlock.y;
+        newBlocks = newBlocks.map(b => {
+          if (connectedIdsSet.has(b.id)) {
+            return {
+              ...b,
+              x: b.x + snapDeltaX,
+              y: b.y + snapDeltaY,
+            };
+          }
+          return b;
+        });
       }
     }
 
@@ -813,8 +865,8 @@ export const useBlockManagement = () => {
       if (placingBlock.type === "control-loop") {
         isControlLoop = true;
       }
-    } else if (typeof paramSelector?.target === "number") {
-      const currentBlock = placedBlocks[paramSelector.target];
+    } else if (paramSelector?.target && paramSelector.target !== "placing") {
+      const currentBlock = placedBlocks.find(b => b.id === paramSelector.target);
       if (currentBlock && currentBlock.type === "control-loop") {
         isControlLoop = true;
       }
@@ -841,24 +893,27 @@ export const useBlockManagement = () => {
       } else {
         setPlacingBlock({ ...placingBlock, param: finalOption });
       }
-    } else if (typeof paramSelector?.target === "number") {
-      const newBlocks = [...placedBlocks];
-      const currentBlock = newBlocks[paramSelector.target];
-      if (paramSelector.type === "motor-icon") {
-        const currentPercent = currentBlock.param?.split(":")[1] || "100";
-        newBlocks[paramSelector.target] = {
-          ...currentBlock,
-          param: `${finalOption}:${currentPercent}`,
-        };
-      } else if (paramSelector.type === "motor-percent") {
-        const currentIcon = currentBlock.param?.split(":")[0] || "X";
-        newBlocks[paramSelector.target] = {
-          ...currentBlock,
-          param: `${currentIcon}:${finalOption}`,
-        };
-      } else {
-        newBlocks[paramSelector.target] = { ...currentBlock, param: finalOption };
-      }
+    } else if (paramSelector?.target && paramSelector.target !== "placing") {
+      const newBlocks = placedBlocks.map(b => {
+        if (b.id === paramSelector.target) {
+          if (paramSelector.type === "motor-icon") {
+            const currentPercent = b.param?.split(":")[1] || "100";
+            return {
+              ...b,
+              param: `${finalOption}:${currentPercent}`,
+            };
+          } else if (paramSelector.type === "motor-percent") {
+            const currentIcon = b.param?.split(":")[0] || "X";
+            return {
+              ...b,
+              param: `${currentIcon}:${finalOption}`,
+            };
+          } else {
+            return { ...b, param: finalOption };
+          }
+        }
+        return b;
+      });
       setPlacedBlocks(resolveBlockLayouts(newBlocks));
     }
     setParamSelector(null);
@@ -881,6 +936,7 @@ export const useBlockManagement = () => {
         id: blockId,
         x: snapped.x,
         y: snapped.y,
+        lastMovedAt: nextZIndexOrder.current++,
       };
 
       let newBlocks = [...placedBlocks, newBlock];
@@ -966,8 +1022,8 @@ export const useBlockManagement = () => {
     blockPosition: displayBlockPosition,
     rawBlockPosition: blockPosition,
     setBlockPosition,
-    editingBlockIndex,
-    setEditingBlockIndex,
+    editingBlockId,
+    setEditingBlockId,
     paramSelector,
     setParamSelector,
     numberInput,

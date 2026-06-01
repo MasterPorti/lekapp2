@@ -107,6 +107,10 @@ function CursosCatalog() {
     loadCourses();
   }, [isAuthenticated]);
 
+  if (authLoading || !isAuthenticated) {
+    return <CursosPageSkeleton />;
+  }
+
   const handleGoBack = () => {
     router.push("/");
   };

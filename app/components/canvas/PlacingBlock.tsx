@@ -76,11 +76,13 @@ export const PlacingBlockComponent = ({
         top: `calc(50% + ${position.y}px)`,
         transform: "translateY(-50%)",
         "--glow-color": block.color,
+        zIndex: 100000000,
+        pointerEvents: "none",
       } as React.CSSProperties}
       onMouseDown={handleMouseDown}
       onTouchStart={handleTouchStart}
     >
-      <div className="relative">
+      <div className="relative" style={{ pointerEvents: "none" }}>
         <BlockSvg
           type={block.type}
           text={block.text}
@@ -88,12 +90,14 @@ export const PlacingBlockComponent = ({
           stroke={block.stroke}
           childrenCount={block.childrenCount || block.children?.length || 0}
         />
-        <BlockContent
-          type={block.type}
-          text={block.text}
-          param={block.param}
-          onParamClick={onParamClick}
-        />
+        <div style={{ pointerEvents: "auto" }}>
+          <BlockContent
+            type={block.type}
+            text={block.text}
+            param={block.param}
+            onParamClick={onParamClick}
+          />
+        </div>
       </div>
     </div>
   );

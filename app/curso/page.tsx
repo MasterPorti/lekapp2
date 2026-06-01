@@ -102,7 +102,7 @@ function CursoContent() {
   };
   const isLockedVideo = isFreePlan && !currentVideo.isFree;
 
-  if (authLoading || courseLoading) {
+  if (authLoading || !isAuthenticated || courseLoading) {
     return <CursoPageSkeleton />;
   }
 

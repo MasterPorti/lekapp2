@@ -50,7 +50,7 @@ export default function LandingPage() {
     router.push(`/curso?id=${id}`);
   };
 
-  if (authLoading) {
+  if (authLoading || !isAuthenticated) {
     return (
       <div className="min-h-dvh flex items-center justify-center bg-[#f3f4de]">
         <div className="text-sm font-mono font-bold text-gray-700">Cargando aplicación...</div>

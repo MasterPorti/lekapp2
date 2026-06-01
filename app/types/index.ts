@@ -15,6 +15,7 @@ export interface Block {
   childBlockId?: string;
   childrenCount?: number;
   isChild?: boolean;
+  lastMovedAt?: number;
 }
 
 export interface PlacingBlock {
@@ -31,10 +32,11 @@ export interface PlacingBlock {
   childBlockId?: string;
   childrenCount?: number;
   isChild?: boolean;
+  lastMovedAt?: number;
 }
 
 export interface ParamSelectorState {
-  target: "placing" | number;
+  target: "placing" | string;
   type: "icon" | "number" | "motor-icon" | "motor-percent";
   color?: "blue" | "orange";
 }

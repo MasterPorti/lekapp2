@@ -5,15 +5,29 @@ interface BlockSelectorModalProps {
   activeCategory: string;
   onCategoryChange: (category: string) => void;
   onBlockClick: (type: string, text: string, color: string, stroke: string, param?: string) => void;
+  onClose?: () => void;
 }
 
 export const BlockSelectorModal = ({
   activeCategory,
   onCategoryChange,
   onBlockClick,
+  onClose,
 }: BlockSelectorModalProps) => {
   return (
     <div className="fixed inset-0 bg-zinc-900 flex flex-col items-center pt-8 animate-slide-up">
+      {onClose && (
+        <button
+          type="button"
+          onClick={onClose}
+          className="absolute top-6 right-6 text-zinc-400 hover:text-white transition-all active:scale-90 cursor-pointer p-1"
+          title="Cerrar"
+        >
+          <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      )}
       <p className="font-mono text-white text-sm mb-4 opacity-70">BLOQUES</p>
       <div className="flex flex-wrap gap-3 justify-center">
         <button
@@ -298,7 +312,7 @@ const BlockOption = ({
 }: BlockOptionProps) => (
   <div
     onClick={onClick}
-    className="cursor-pointer block-hover-glow hover:scale-[1.02] active:scale-[0.98] relative"
+    className="cursor-pointer block-hover-glow active:scale-[0.98] relative"
     style={{ "--glow-color": fill } as React.CSSProperties}
   >
     <svg
@@ -321,7 +335,7 @@ interface CShapedBlockOptionProps {
 const CShapedBlockOption = ({ onClick }: CShapedBlockOptionProps) => (
   <div
     onClick={onClick}
-    className="cursor-pointer block-hover-glow hover:scale-[1.02] active:scale-[0.98] relative"
+    className="cursor-pointer block-hover-glow active:scale-[0.98] relative"
     style={{ "--glow-color": "#EAB308" } as React.CSSProperties}
   >
     <CShapedBlockSvg color="#EAB308" stroke="#CA8A04" childrenCount={0} />
