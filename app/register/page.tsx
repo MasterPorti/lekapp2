@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Script from "next/script";
 import { useAuth } from "../hooks/useAuth";
 import { Turnstile } from "../components/ui/Turnstile";
 
@@ -144,6 +145,10 @@ export default function RegisterPage() {
         backgroundSize: '24px 24px'
       }}
     >
+      <Script
+        src="https://challenges.cloudflare.com/turnstile/v0/api.js"
+        strategy="afterInteractive"
+      />
       {/* BRAND HEADER */}
       <div className="flex items-center gap-3 mb-8">
         <svg 

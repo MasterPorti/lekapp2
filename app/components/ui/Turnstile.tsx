@@ -1,6 +1,5 @@
 "use client";
 
-import Script from "next/script";
 import { useEffect, useRef, useState } from "react";
 
 interface TurnstileInstance {
@@ -28,7 +27,14 @@ interface TurnstileProps {
 export function Turnstile({ siteKey, onSuccess, onExpire }: TurnstileProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const widgetIdRef = useRef<string | null>(null);
-  const [scriptLoaded, setScriptLoaded] = useState(false);
+  
+  // Initialize state based on whether the Turnstile script has already been loaded on window
+  const [scriptLoaded, setScriptLoaded] = useState(() => {
+    if (typeof window !== "undefined") {
+      return !!(window as unknown as CustomWindow).turnstile;
+    }
+    return false;
+  });
 
   const onSuccessRef = useRef(onSuccess);
   const onExpireRef = useRef(onExpire);
@@ -39,31 +45,41 @@ export function Turnstile({ siteKey, onSuccess, onExpire }: TurnstileProps) {
     onExpireRef.current = onExpire;
   }, [onSuccess, onExpire]);
 
-  // Check if Turnstile is already loaded when the component mounts
+  // Poll for window.turnstile presence if it wasn't loaded at initialization
   useEffect(() => {
+    if (scriptLoaded) return;
+
     const win = window as unknown as CustomWindow;
-    if (typeof window !== "undefined" && win.turnstile) {
-      const timer = setTimeout(() => setScriptLoaded(true), 0);
-      return () => clearTimeout(timer);
-    }
-  }, []);
+    const interval = setInterval(() => {
+      if (win.turnstile) {
+        setScriptLoaded(true);
+        clearInterval(interval);
+      }
+    }, 100);
+
+    return () => clearInterval(interval);
+  }, [scriptLoaded]);
 
   useEffect(() => {
     const win = window as unknown as CustomWindow;
+    const currentContainer = containerRef.current;
+
     // Render Turnstile when script is loaded and container is ready
-    if (scriptLoaded && typeof window !== "undefined" && win.turnstile && containerRef.current) {
+    if (scriptLoaded && win.turnstile && currentContainer) {
       // Clear previous widget if any
       if (widgetIdRef.current) {
         try {
-          if (document.body.contains(containerRef.current)) {
+          if (document.body.contains(currentContainer)) {
             win.turnstile.remove(widgetIdRef.current);
           }
-        } catch (e) {}
+        } catch {
+          // Catch and ignore Turnstile removal errors
+        }
         widgetIdRef.current = null;
       }
 
       try {
-        widgetIdRef.current = win.turnstile.render(containerRef.current, {
+        widgetIdRef.current = win.turnstile.render(currentContainer, {
           sitekey: siteKey,
           callback: (token) => onSuccessRef.current(token),
           "expired-callback": () => onExpireRef.current?.(),
@@ -78,29 +94,22 @@ export function Turnstile({ siteKey, onSuccess, onExpire }: TurnstileProps) {
       // Cleanup widget on unmount (only if container is still in DOM)
       if (
         widgetIdRef.current &&
-        typeof window !== "undefined" &&
         win.turnstile &&
-        containerRef.current &&
-        document.body.contains(containerRef.current)
+        currentContainer &&
+        document.body.contains(currentContainer)
       ) {
         try {
           win.turnstile.remove(widgetIdRef.current);
-        } catch (e) {}
-          widgetIdRef.current = null;
+        } catch {
+          // Catch and ignore Turnstile removal errors
+        }
+        widgetIdRef.current = null;
       }
     };
   }, [scriptLoaded, siteKey]);
 
   return (
-    <>
-      <Script
-        src="https://challenges.cloudflare.com/turnstile/v0/api.js"
-        async
-        defer
-        onLoad={() => setScriptLoaded(true)}
-      />
-      {/* Use turnstile-container instead of cf-turnstile to prevent script auto-scanning */}
-      <div ref={containerRef} className="turnstile-container my-4 flex justify-center" />
-    </>
+    /* Use turnstile-container instead of cf-turnstile to prevent script auto-scanning */
+    <div ref={containerRef} className="turnstile-container my-4 flex justify-center" />
   );
 }
