@@ -3,6 +3,22 @@
 import Script from "next/script";
 import { useEffect, useRef, useState } from "react";
 
+interface TurnstileInstance {
+  render: (
+    container: HTMLElement,
+    options: {
+      sitekey: string;
+      callback: (token: string) => void;
+      "expired-callback"?: () => void;
+    }
+  ) => string;
+  remove: (widgetId: string) => void;
+}
+
+interface CustomWindow extends Window {
+  turnstile?: TurnstileInstance;
+}
+
 interface TurnstileProps {
   siteKey: string;
   onSuccess: (token: string) => void;
@@ -14,18 +30,31 @@ export function Turnstile({ siteKey, onSuccess, onExpire }: TurnstileProps) {
   const widgetIdRef = useRef<string | null>(null);
   const [scriptLoaded, setScriptLoaded] = useState(false);
 
+  // Check if Turnstile is already loaded when the component mounts
   useEffect(() => {
+    const win = window as unknown as CustomWindow;
+    if (typeof window !== "undefined" && win.turnstile) {
+      const timer = setTimeout(() => setScriptLoaded(true), 0);
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
+  useEffect(() => {
+    const win = window as unknown as CustomWindow;
     // Render Turnstile when script is loaded and container is ready
-    if (scriptLoaded && typeof window !== "undefined" && (window as any).turnstile && containerRef.current) {
+    if (scriptLoaded && typeof window !== "undefined" && win.turnstile && containerRef.current) {
       // Clear previous widget if any
       if (widgetIdRef.current) {
         try {
-          (window as any).turnstile.remove(widgetIdRef.current);
+          if (document.body.contains(containerRef.current)) {
+            win.turnstile.remove(widgetIdRef.current);
+          }
         } catch (e) {}
+        widgetIdRef.current = null;
       }
 
       try {
-        widgetIdRef.current = (window as any).turnstile.render(containerRef.current, {
+        widgetIdRef.current = win.turnstile.render(containerRef.current, {
           sitekey: siteKey,
           callback: onSuccess,
           "expired-callback": onExpire,
@@ -36,11 +65,19 @@ export function Turnstile({ siteKey, onSuccess, onExpire }: TurnstileProps) {
     }
 
     return () => {
-      // Cleanup widget on unmount
-      if (widgetIdRef.current && typeof window !== "undefined" && (window as any).turnstile) {
+      const win = window as unknown as CustomWindow;
+      // Cleanup widget on unmount (only if container is still in DOM)
+      if (
+        widgetIdRef.current &&
+        typeof window !== "undefined" &&
+        win.turnstile &&
+        containerRef.current &&
+        document.body.contains(containerRef.current)
+      ) {
         try {
-          (window as any).turnstile.remove(widgetIdRef.current);
+          win.turnstile.remove(widgetIdRef.current);
         } catch (e) {}
+        widgetIdRef.current = null;
       }
     };
   }, [scriptLoaded, siteKey, onSuccess, onExpire]);
