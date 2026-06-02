@@ -30,6 +30,15 @@ export function Turnstile({ siteKey, onSuccess, onExpire }: TurnstileProps) {
   const widgetIdRef = useRef<string | null>(null);
   const [scriptLoaded, setScriptLoaded] = useState(false);
 
+  const onSuccessRef = useRef(onSuccess);
+  const onExpireRef = useRef(onExpire);
+
+  // Sync callbacks to refs to avoid re-rendering Turnstile on reference changes
+  useEffect(() => {
+    onSuccessRef.current = onSuccess;
+    onExpireRef.current = onExpire;
+  }, [onSuccess, onExpire]);
+
   // Check if Turnstile is already loaded when the component mounts
   useEffect(() => {
     const win = window as unknown as CustomWindow;
@@ -56,8 +65,8 @@ export function Turnstile({ siteKey, onSuccess, onExpire }: TurnstileProps) {
       try {
         widgetIdRef.current = win.turnstile.render(containerRef.current, {
           sitekey: siteKey,
-          callback: onSuccess,
-          "expired-callback": onExpire,
+          callback: (token) => onSuccessRef.current(token),
+          "expired-callback": () => onExpireRef.current?.(),
         });
       } catch (error) {
         console.error("Turnstile render error:", error);
@@ -77,10 +86,10 @@ export function Turnstile({ siteKey, onSuccess, onExpire }: TurnstileProps) {
         try {
           win.turnstile.remove(widgetIdRef.current);
         } catch (e) {}
-        widgetIdRef.current = null;
+          widgetIdRef.current = null;
       }
     };
-  }, [scriptLoaded, siteKey, onSuccess, onExpire]);
+  }, [scriptLoaded, siteKey]);
 
   return (
     <>
